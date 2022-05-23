@@ -2,6 +2,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
+
 class Crowd:
 
     # Class attributes - crowd_props in matlab
@@ -28,7 +29,10 @@ class Crowd:
         self.avgNumInCrowd = int(self.density * self.area)  # Nc
         self.lamda = self.avgNumInCrowd / self.length       # Avg person/m
 
-    def generateLocations(self, lamda, avgNumCrowd):
+        self.generateLocations()
+        self.generateBodyProperties()
+
+    def generateLocations(self):
         self.gaps = np.random.exponential(1/self.lamda, size=self.avgNumInCrowd)
         self.pLoc = np.cumsum(self.gaps, axis=None, dtype=None, out=None)
 
@@ -43,6 +47,6 @@ class Crowd:
     def assembleCrowd(self):
         return
 
-c1 = Crowd(3,10,4,3)
-c1.generateBodyProperties()
-print(c1.pStride)
+# c1 = Crowd(3,10,4,3)
+# c1.generateBodyProperties()
+# print(c1.pStride)

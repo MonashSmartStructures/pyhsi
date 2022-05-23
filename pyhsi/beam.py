@@ -25,6 +25,8 @@ class Beam:
         self.nDOF = None
         self.RDOF = None
 
+        self.calcBeamProperties()
+
     def calcBeamProperties(self):
         self.I = (self.width * self.height ** 3) / 12  # I - Second Moment of Area (m^4)
         self.EI = self.linearMass * ((2 * math.pi * self.beamFreq) * (math.pi / self.length) ** (-2)) ** 2  # EI - Flexural Rigidity
