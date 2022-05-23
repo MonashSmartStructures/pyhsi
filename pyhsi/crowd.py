@@ -1,3 +1,6 @@
+import numpy as np
+import math
+import matplotlib.pyplot as plt
 
 class Crowd:
 
@@ -26,11 +29,20 @@ class Crowd:
         self.lamda = self.avgNumInCrowd / self.length       # Avg person/m
 
     def generateLocations(self, lamda, avgNumCrowd):
-        return
+        self.gaps = np.random.exponential(1/self.lamda, size=self.avgNumInCrowd)
+        self.pLoc = np.cumsum(self.gaps, axis=None, dtype=None, out=None)
 
     def generateBodyProperties(self):
-        return
+        self.pMass = np.random.lognormal(mean=self.meanLognormalModel, sigma=self.sdLognormalModel, size=self.avgNumInCrowd)  # lognrnd(mM,sM,[1 Nc]) log - normal distribution of mass
+        self.pXi = np.random.normal(loc=self.meanDamping, scale=self.sdDamping, size=self.avgNumInCrowd) #normrnd(mXi,sXi,[1 Nc])
+        self.pStiff = np.random.normal(loc=self.meanStiffness, scale=self.sdStiffness, size=self.avgNumInCrowd) #normrnd(mK, sK, [1 Nc])
+        self.pPace = np.random.normal(self.meanPace,self.sdPace,self.avgNumInCrowd)#normrnd(mP, sP, [1 Nc])
+        self.pStride = np.random.normal(self.meanStride,self.sdStride,self.avgNumInCrowd)#normrnd(mS, sS, [1 Nc])
+        self.pPhase = (2 * math.pi) * np.random.rand(self.avgNumInCrowd)
 
     def assembleCrowd(self):
         return
-    
+
+c1 = Crowd(3,10,4,3)
+c1.generateBodyProperties()
+print(c1.pStride)
