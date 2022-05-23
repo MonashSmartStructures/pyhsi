@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-"""Tests for `test_python_package` package."""
+"""Tests for `pyhsi` package."""
 
 import pytest
 
 from click.testing import CliRunner
 
-from test_python_package import test_python_package
-from test_python_package import cli
+from pyhsi import test_python_package
+from pyhsi import cli
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def test_command_line_interface():
     runner = CliRunner()
     result = runner.invoke(cli.main)
     assert result.exit_code == 0
-    assert 'test_python_package.cli.main' in result.output
+    assert 'pyhsi.cli.main' in result.output
     help_result = runner.invoke(cli.main, ['--help'])
     assert help_result.exit_code == 0
     assert '--help  Show this message and exit.' in help_result.output
