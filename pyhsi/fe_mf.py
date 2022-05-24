@@ -108,6 +108,54 @@ class FeMfSolver:
         self.ddq = 0
 
 
+def newMark(t, M, C, K, F, u0, du0):
+    # Select algorithm parameters
+    gamma = 0.5
+    beta = 0.25
+    nDOF = len(M)
+    n = len(t)
+
+    if n == 1:
+        h = t
+    else:
+        h = t[1]-t[0]
+
+    # Effective stiffness and other matrices
+    Keff = K + (gamma/(beta * h)) * C + (1 / (beta * h ** 2)) * M
+    iKeff = np.linalg.inv(Keff)
+    a = (1 / (beta * h)) * M + (gamma / beta) * C
+    b = (1 / (2 * beta)) * M + h * (gamma / (2 * beta) - 1) * C
+
+    # Force increments
+    dF = np.zeros(n, nDOF)
+    dF[0:n-2] = np.diff(F)
+    dF[-1] = 0
+
+    # Initial acceleration
+    ddu0 = np.linalg.lstsq(M, np.transpose(F[0, :]) - C * du0 - K * u0)
+
+    # Initial Conditions and output matrices
+    u = np.zeros(n, nDOF)
+    du = np.zeros(n, nDOF)
+    ddu = np.zeros(n, nDOF)
+    u[0] = u0
+    du[0] = du0
+    ddu[0] = ddu0
+
+    # loop for all time steps
+    for i in range(1, n-1):
+        dFeff = np.transpose(dF[i - 1]) + a * np.transpose(du[i - 1])+ b * np.transpose(ddu[i-1])
+        delta_u = iKeff * dFeff
+        delta_du = (gamma / (beta * h)) * delta_u - (gamma / beta) * np.transpose(du[i - 1]) + \
+                   h * (1 - gamma / (2 * beta)) * np.transpose(ddu[i-1])
+        delta_ddu = (1 / (beta * h ** 2)) * delta_u - (1 / (beta * h)) * np.transpose(du[i - 1]) - \
+                    (1 / (2 * beta)) * np.transpose(ddu[i - 1])
+
+        u[i] = u[i - 1] + np.transpose(delta_u)
+        du[i] = du[i - 1] + np.transpose(delta_du)
+        ddu[i] = ddu[i - 1] + np.transpose(delta_ddu)
+
+
 def fe_mf_crowd(t, crowd, beam):
     # Filler return values
     M = 0
