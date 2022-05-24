@@ -39,3 +39,16 @@ class Beam:
     def testBeamProperties(self):
 
         return
+
+    def beamElement(self):
+        L = self.length
+
+        # Elemental mass matrix
+        elementalMassMatrix = [[156, 22 * L, 54, -13 * L], [22 * L, 4 * L ** 2, 13 * L, -3 * L ** 2],
+                               [54, 13 * L, 156, -22 * L], [-13 * L, -3 * L ** 2, -22 * L, 4 * L ** 2]]
+
+        # Elemental stiffness matrix
+        elementalStiffnessMatrix = [[12, 6*L, -12, 6*L], [6*L, 4*L**2, -6*L, 2*L**2],
+                                    [-12, -6*L, 12, -6*L], [6*L, 2*L**2, -6*L, 4*L**2]]
+
+        return elementalMassMatrix, elementalStiffnessMatrix

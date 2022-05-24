@@ -2,6 +2,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
+
 class Crowd:
 
     # Class attributes - crowd_props in matlab
