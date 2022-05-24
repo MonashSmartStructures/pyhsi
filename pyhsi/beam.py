@@ -21,8 +21,9 @@ class Beam:
 
         self.I = None
         self.EI = None
-        self.nDOF = None
-        self.RDOF = None
+        self.nDOF = 0
+        self.nBDOF = 0
+        self.RDOF = 0
 
         self.calcBeamProperties()
 
@@ -31,7 +32,8 @@ class Beam:
         self.EI = self.linearMass * (
                     (2 * math.pi * self.beamFreq) * (math.pi / self.length) ** (-2)) ** 2  # EI - Flexural Rigidity
         self.nDOF = 2 * (self.numElements + 1)
-        self.RDOF = [1, self.nDOF - 1]
+        self.nBDOF = 2 * (self.numElements + 1)
+        self.RDOF = [0, self.nDOF - 2]  # Should this be nDOF-1 so that the last column is used not 2nd last?
 
         if self.numElements % 2 != 0:
             self.numElements += 1
