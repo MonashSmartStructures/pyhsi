@@ -2,7 +2,6 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
-
 class Crowd:
 
     # Class attributes - crowd_props in matlab
@@ -29,10 +28,7 @@ class Crowd:
         self.avgNumInCrowd = int(self.density * self.area)  # Nc
         self.lamda = self.avgNumInCrowd / self.length       # Avg person/m
 
-        self.generateLocations()
-        self.generateBodyProperties()
-
-    def generateLocations(self):
+    def generateLocations(self, lamda, avgNumCrowd):
         self.gaps = np.random.exponential(1/self.lamda, size=self.avgNumInCrowd)
         self.pLoc = np.cumsum(self.gaps, axis=None, dtype=None, out=None)
 
@@ -44,9 +40,22 @@ class Crowd:
         self.pStride = np.random.normal(self.meanStride,self.sdStride,self.avgNumInCrowd)#normrnd(mS, sS, [1 Nc])
         self.pPhase = (2 * math.pi) * np.random.rand(self.avgNumInCrowd)
 
+        if self.sync > 0 and self.sync <= 1:
+            self.Ns = np.fix(self.avgNumInCrowd*self.sync)
+            #Randomly choose the synchronised pedestrians
+            self.rp = np.random.permutation(self.avgNumInCrowd) #randomise indices
+            #self.iSync = self.rp[1:self.Ns].sort                #choose first Ns and sort
+            #Make the pacing frequencies & phase the same, but random
+            self.sPace = np.random.normal(self.meanPace, self.sdPace, size=1)
+            #self.pPace[self.iSync] = self.sPace
+            self.sPhase = (2 * math.pi) * (np.random.rand(1))
+            #self.pPhase[self.iSync] = self.sPhase
+       # self.pW = math.sqrt(np.divide(self.pStiff,self.pMass))  #natural frequency of the sprung mass
+        #self.pDamp = 2 * np.multiply(self.pMass,self.pW,self.pXi)   #damping coefficient of the sprung mass
+        self.pVel = np.multiply(self.pPace,self.pStride)            #Velocity
     def assembleCrowd(self):
         return
 
-# c1 = Crowd(3,10,4,3)
-# c1.generateBodyProperties()
-# print(c1.pStride)
+testcrowd = Crowd(0.5,100,2,0.1)
+testcrowd.generateBodyProperties()
+print(testcrowd.sPhase)
