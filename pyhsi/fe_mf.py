@@ -49,17 +49,18 @@ class FeMfSolver:
         self.K = []
         self.F = []
 
-        self.q = 0
-        self.dq = 0
-        self.ddq = 0
+        self.q = []
+        self.dq = []
+        self.ddq = []
 
         self.assembleMCK()
         self.createTimeVector()
         self.assembleMatrices()
         self.solver()
-        print(self.q)
-        print(self.dq)
-        print(self.ddq)
+        acc = self.ddq[:, self.beam.numElements]
+        rms = timeRMS(self.t, acc)
+        self.maxRMS = max(rms)[0]
+        print(f"Max RMS: {self.maxRMS:.6f} m/s^2", )
 
     def assembleMCK(self):
 
@@ -102,7 +103,7 @@ class FeMfSolver:
         self.t, self.dT = simTime(self.crowd, self.beam, self.nSteps)
 
     def assembleMatrices(self):
-        # fe_mf_crowd in matlab
+        # fe_mf_crowd in matlab, needs renaming
 
         g = 9.81
         nDOF = self.beam.nDOF
@@ -186,7 +187,7 @@ def newMark(t, M, C, K, F, u0, du0):
     ddu[0] = ddu0
 
     # loop for all time steps
-    for i in range(1, n - 1):
+    for i in range(1, n):
         dFeff = np.transpose(dF[i - 1]) + a.dot(np.transpose(du[i - 1])) + b.dot(np.transpose(ddu[i - 1]))
         delta_u = iKeff.dot(dFeff)
         delta_du = (gamma / (beta * h)) * delta_u - (gamma / beta) * np.transpose(du[i - 1]) + \
@@ -336,6 +337,32 @@ def globalShapeFunction(x, lBeam, nElements, L, nDOF, RDOF, Ng, dNg=False, ddNg=
         # ddNg[i] = 0
 
     return Ng
+
+
+def timeRMS(t, x, RMS_Window=1):
+    # This function returns the tspan-rms of the signal
+
+    n = len(x)
+    i = 0
+    while t[i] < RMS_Window:
+        i += 1
+    Npts = i
+    rNpts = math.sqrt(Npts)
+
+    rms = np.zeros((n, 1))
+
+    i = 1
+    while i < Npts:
+        vec = x[0:i]
+        rms[i-1] = np.linalg.norm(vec)/math.sqrt(i)
+        i += 1
+
+    while i < n:
+        vec = x[i-Npts:i]
+        rms[i-1] = np.linalg.norm(vec) / rNpts
+        i += 1
+
+    return rms
 
 
 fe_mf()
