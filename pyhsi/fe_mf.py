@@ -2,6 +2,8 @@ import math
 import numpy as np
 import pandas as pd
 
+from matplotlib import pyplot as plt
+
 from scipy.linalg import eig
 from scipy.linalg import eigh
 
@@ -167,13 +169,14 @@ def newMark(t, M, C, K, F, u0, du0):
 
     # Force increments
     dF = np.zeros((n, nDOF))
-    asdf = np.diff(F, axis=0)
     dF[0:n - 1] = np.diff(F, axis=0)
     dF[-1] = 0
 
     # Initial acceleration
-    ddu0 = np.linalg.inv(M) * np.transpose(F[0, :]) - C * du0 - K * u0
-
+    invM = np.linalg.inv(M)
+    tF = np.transpose(F[0])
+    #ddu0 = np.linalg.inv(M).dot(np.transpose(F[0])) - C * du0 - K * u0
+    ddu0 = invM.dot(tF)
     # Initial Conditions and output matrices
     u = np.zeros((n, nDOF))
     du = np.zeros((n, nDOF))
@@ -336,3 +339,23 @@ def globalShapeFunction(x, lBeam, nElements, L, nDOF, RDOF, Ng, dNg=False, ddNg=
 
 
 fe_mf()
+
+# creating the dataset
+data = {'MATLAB': 0.241068, 'Python': 1}
+type = list(data.keys())
+values = list(data.values())
+fig = plt.figure(figsize=(5, 5))
+
+# creating the bar plot
+plt.bar(type, values, color='maroon',
+        width=0.5)
+
+plt.xlabel("Toolbox")
+plt.ylabel("RMS Acceleration (m/s^2)")
+plt.title("Max RMS Comparison FE MF")
+#plt.show()
+
+
+
+
+
