@@ -1,7 +1,9 @@
 import math
 
-from crowd import Crowd
+from crowd import Crowd, testCrowd
 from beam import Beam
+import math
+import numpy as np
 
 
 def fe_mf():
@@ -10,7 +12,8 @@ def fe_mf():
     nSteps = 5000
 
     # Create crowd and beam objects
-    crowd = Crowd(0.5, 100, 2, 0.1)
+    crowd = testCrowd(80,650,21500,2.10,math.pi,0,1.51,0)
+    #crowd = Crowd(0.5, 100, 2, 0.1)
     # beam = Beam()
 
     # Create lamda
@@ -45,7 +48,8 @@ class FeMfSolver:
         self.dq = 0
         self.ddq = 0
 
-        self.assembleMCK()
+        #self.assembleMCK()
+        self.createTimeVector()
 
     def assembleMCK(self):
 
@@ -108,15 +112,22 @@ def fe_mf_crowd(t, crowd, beam):
 
     return M, C, K, F
 
-
-def simTime(crowd, beam, nSteps):
-    t = 0
-    dT = 0
-    return t, dT
-
+def simTime(crowd, beam, nSteps): #Returns the simulation time frame for a given pace and stride vector
+    f = 1 / (2 * math.pi) * (math.pi/beam.length)**2 * math.sqrt(beam.EI/beam.linearMass)
+    Period = 1 / f
+    dTmax = 0.02 * Period
+    pVel = crowd.pVel
+    Toff = (-crowd.pLoc + beam.length) / pVel
+    Tend = 1.1 * Toff
+    dT = Tend / (nSteps)
+    dT = min(dT,dTmax)
+    t = np.arange(0, Tend, dT)      #Rounding error created by differing precision in Python vs MATLAB
+    return t, dT                    #may have caused discrepancies in output values.
 
 def constraints(M, C, K):
-    # def imposeRestraint(A, dof):
+    return
+ #def imposeRestraint(A, dof):
 
 
 fe_mf()
+

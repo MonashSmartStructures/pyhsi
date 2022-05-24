@@ -57,6 +57,22 @@ class Crowd:
     def assembleCrowd(self):
         return
 
-testcrowd = Crowd(0.5,100,2,0.1)
-testcrowd.generateBodyProperties()
-print(testcrowd.sPhase)
+
+class testCrowd:
+    def __init__(self, pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync):
+        self.pMass = pMass
+        self.pDamp = pDamp
+        self.pStiff = pStiff
+        self.pPace = pPace
+        self.pPhase = pPhase
+        self.pLoc = pLoc
+        self.pVel = pVel
+        self.iSync = iSync
+
+
+
+#testcrowd = Crowd(0.5,100,2,0.1)
+#testcrowd.generateBodyProperties()
+#print(testcrowd.sPhase)
+
+#testcrowd = testCrowd(80,650,21500,2.10,math.pi,0,1.51,0)
