@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import pandas as pd
 
 from scipy.linalg import eig
 from scipy.linalg import eigh
@@ -117,7 +118,7 @@ class FeMfSolver:
         F = np.array([[0] * nDOF] * nStep, dtype='f')
 
         # Shape function zero matrices
-        Ng0 = np.array([0] * nBDOF)  # Zero vector
+        Ng0 = np.array([0] * nBDOF, dtype='f')  # Zero vector
         elementLength = self.beam.length / self.beam.numElements
 
         # For each pedestrian
@@ -135,6 +136,10 @@ class FeMfSolver:
         self.C = C
         self.K = K
         self.F = F
+
+        # Import F from xlsx file
+        file = pd.read_excel('F.xlsx', sheet_name='Sheet1')
+        self.F = file.as_matrix()
 
     def solver(self):
         # Runs Newmark-Beta integration for MDOF systems
@@ -164,11 +169,11 @@ def newMark(t, M, C, K, F, u0, du0):
     # Force increments
     dF = np.zeros((n, nDOF))
     asdf = np.diff(F, axis=0)
-    dF[0:n - 2] = np.diff(F)
+    dF[0:n - 1] = np.diff(F, axis=0)
     dF[-1] = 0
 
     # Initial acceleration
-    ddu0 = np.linalg.lstsq(M, np.transpose(F[0, :]) - C * du0 - K * u0)
+    ddu0 = np.linalg.inv(M) * np.transpose(F[0, :]) - C * du0 - K * u0
 
     # Initial Conditions and output matrices
     u = np.zeros((n, nDOF))
@@ -300,13 +305,13 @@ def globalShapeFunction(x, lBeam, nElements, L, nDOF, RDOF, Ng, dNg=False, ddNg=
             s = nElements
             zeta = 1.0
 
-        dof = []
-        for i in range(2 * s - 2, 2 * s + 2):
-            dof.append(i)
-        # dof = np.array([i for i in range(2*s-1, 2*s+2)])
+        # dof = []
+        # for i in range(2 * s - 2, 2 * s + 2):
+        #     dof.append(i)
+        dof = np.array([i for i in range(2*s-2, 2*s+2)])
 
         N1 = 1 - 3 * zeta ** 2 + 2 * zeta ** 3
-        N2 = (zeta - 2 * zeta ** 2 + zeta * 3) * L
+        N2 = (zeta - 2 * zeta ** 2 + zeta ** 3) * L
         N3 = 3 * zeta ** 2 - 2 * zeta ** 3
         N4 = (-zeta ** 2 + zeta ** 3) * L
         Ng[dof] = np.array([N1, N2, N3, N4], dtype='f')
