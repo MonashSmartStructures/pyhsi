@@ -135,11 +135,10 @@ class FeMfSolver:
         self.M = M
         self.C = C
         self.K = K
-        self.F = F
+        # self.F = F
 
         # Import F from xlsx file
-        file = pd.read_excel('F.xlsx', sheet_name='Sheet1')
-        self.F = file.as_matrix()
+        self.F = np.genfromtxt('F.csv', delimiter=',')
 
     def solver(self):
         # Runs Newmark-Beta integration for MDOF systems
