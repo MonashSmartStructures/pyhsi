@@ -187,8 +187,8 @@ def newMark(t, M, C, K, F, u0, du0):
 
     # loop for all time steps
     for i in range(1, n - 1):
-        dFeff = np.transpose(dF[i - 1]) + a * np.transpose(du[i - 1]) + b * np.transpose(ddu[i - 1])
-        delta_u = iKeff * dFeff
+        dFeff = np.transpose(dF[i - 1]) + a.dot(np.transpose(du[i - 1])) + b.dot(np.transpose(ddu[i - 1]))
+        delta_u = iKeff.dot(dFeff)
         delta_du = (gamma / (beta * h)) * delta_u - (gamma / beta) * np.transpose(du[i - 1]) + \
                    h * (1 - gamma / (2 * beta)) * np.transpose(ddu[i - 1])
         delta_ddu = (1 / (beta * h ** 2)) * delta_u - (1 / (beta * h)) * np.transpose(du[i - 1]) - \
