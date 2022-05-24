@@ -138,10 +138,7 @@ class FeMfSolver:
         self.M = M
         self.C = C
         self.K = K
-        # self.F = F
-
-        # Import F from xlsx file
-        self.F = np.genfromtxt('F.csv', delimiter=',')
+        self.F = F
 
     def solver(self):
         # Runs Newmark-Beta integration for MDOF systems
@@ -304,7 +301,7 @@ def globalShapeFunction(x, lBeam, nElements, L, nDOF, RDOF, Ng, dNg=False, ddNg=
     if 0 <= x <= lBeam:
         s = int(np.fix(x / L) + 1)
         zeta = (x - (s - 1) * L) / L
-        if x > nElements:
+        if s > nElements:
             s = nElements
             zeta = 1.0
 
