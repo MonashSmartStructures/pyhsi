@@ -16,7 +16,12 @@ def fe_mf():
     nSteps = 5000
 
     # Create crowd and beam objects
-    crowd = TestCrowd(80, 650, 21500, 2.10, math.pi, 0, 1.51, 0)
+    # crowd = TestCrowd(80, 650, 21500, 2.10, math.pi, 0, 1.51, 0)
+
+    m = 73.85
+    k = 14.11e3
+    xi = 0.3
+    crowd = TestCrowd(m, xi * 2 * math.sqrt(k * m), k, 2, 0, 0, 1.25, 0)
     # crowd = Crowd(0.5, 100, 2, 0.1)
     # beam = Beam()
 
@@ -57,10 +62,11 @@ class FeMfSolver:
         self.createTimeVector()
         self.assembleMatrices()
         self.solver()
-        acc = self.ddq[:, self.beam.numElements]
-        rms = timeRMS(self.t, acc)
-        self.maxRMS = max(rms)[0]
+        self.acc = self.ddq[:, self.beam.numElements]
+        self.rms = timeRMS(self.t, self.acc)
+        self.maxRMS = max(self.rms)[0]
         print(f"Max RMS: {self.maxRMS:.6f} m/s^2", )
+        self.plotAcceleration()
 
     def assembleMCK(self):
 
@@ -145,6 +151,23 @@ class FeMfSolver:
         u0 = np.zeros(self.beam.nDOF)
         du0 = np.zeros(self.beam.nDOF)
         self.q, self.dq, self.ddq = newMark(self.t, self.M, self.C, self.K, self.F, u0, du0)
+
+    def plotAcceleration(self):
+
+        # creating the dataset
+
+        # fig = plt.figure(figsize=(5, 5))
+        plt.figure(figsize=(9, 4))
+
+        # creating the bar plot
+        plt.plot(self.t, self.acc, 'r', self.t, self.rms, 'b')
+
+        plt.xlabel("Time")
+        plt.ylabel("Acceleration (m/s^2)")
+        plt.title("Midspan Acceleration")
+
+        plt.xlim([0, 40])
+        plt.show()
 
 
 def newMark(t, M, C, K, F, u0, du0):
