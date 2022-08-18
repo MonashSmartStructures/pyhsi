@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import pandas as pd
 
 from matplotlib import pyplot as plt
 
@@ -22,16 +21,10 @@ def fe_mf():
     k = 14.11e3
     xi = 0.3
     crowd = TestCrowd(m, xi * 2 * math.sqrt(k * m), k, 2, 0, 0, 1.25, 0)
-    # crowd = Crowd(0.5, 100, 2, 0.1)
-    # beam = Beam()
-
-    # Create lamda
-    # lamda = [0]*(2*beam.numElements)
 
     # run fe_mf_crowd_solve
     fe_mf_solver = FeMfSolver(crowd, nSteps)
-
-    # t, q, dq, ddq = fe_mf_solve(nSteps, crowd, beam)
+    fe_mf_solver.plotAcceleration()
 
 
 class FeMfSolver:
@@ -65,8 +58,7 @@ class FeMfSolver:
         self.acc = self.ddq[:, self.beam.numElements]
         self.rms = timeRMS(self.t, self.acc)
         self.maxRMS = max(self.rms)[0]
-        print(f"Max RMS: {self.maxRMS:.6f} m/s^2", )
-        self.plotAcceleration()
+        print(f"Max RMS: {self.maxRMS:.6f} m/s^2")
 
     def assembleMCK(self):
 
