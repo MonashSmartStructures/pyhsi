@@ -1,12 +1,12 @@
 import numpy as np
 import math
+import csv
 import matplotlib.pyplot as plt
 
 
 # In the future, implement crowd as a group of pedestrian objects
 
-
-class Crowd:
+class oldCrowd:
     # Class attributes - crowd_props in matlab
     # meanMass = 74.1             # mM
     # sdMass = 15.91              # sM
@@ -78,27 +78,10 @@ class TestCrowd:
         self.size = 1  # The number of pedestrians is 1
 
 
-class TestCrowd2:
-    def __init__(self, nPed, density, length, width, sync):
-        self.pedestrians = []
-
-        # for i in range(nPed):
-        # self.pMass = pMass
-        # self.pDamp = pDamp
-        # self.pStiff = pStiff
-        # self.pPace = pPace
-        # self.pPhase = pPhase
-        # self.pLoc = pLoc
-        # self.pVel = pVel
-        # self.iSync = iSync
-        #
-        # self.pedestrians.append(Pedestrian(pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync))
-
-    def generatePedestrian(self):
-        return
-
-
 class Pedestrian:
+
+    humanProperties = {}
+
     def __init__(self, pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync):
         self.pMass = pMass
         self.pDamp = pDamp
@@ -109,8 +92,94 @@ class Pedestrian:
         self.pVel = pVel
         self.iSync = iSync
 
+    @classmethod
+    def setHumanProperties(cls, humanProperties):
+        cls.humanProperties = humanProperties
+
+    @classmethod
+    def deterministicPedestrian(cls):
+        pMass = cls.humanProperties['meanMass']
+        pDamp = 0
+        pStiff = 0
+        pPace = 0
+        pPhase = 0
+        pLoc = 0
+        pVel = 0
+        iSync = 0
+        return cls(pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync)
+
+    @classmethod
+    def randomPedestrain(cls):
+        pMass = 0
+        pDamp = 0
+        pStiff = 0
+        pPace = 0
+        pPhase = 0
+        pLoc = 0
+        pVel = 0
+        iSync = 0
+        return cls(pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync)
+
+
+class Crowd:
+    def __init__(self, nPed, density, length, width, sync):
+        self.nPed = nPed
+        self.density = density
+        self.length = length
+        self.width = width
+        self.sync = sync
+
+        self.pedestrians = []
+
+    def addRandomPedestrian(self):
+        self.pedestrians.append(Pedestrian.randomPedestrain())
+
+    def addDeterministicPedestrian(self):
+        self.pedestrians.append(Pedestrian.deterministicPedestrian())
+
+
+class SinglePedestrian(Pedestrian):
+    pass
+
+
+class DeterministicCrowd(Crowd):
+    def __init__(self, nPed, density, length, width, sync):
+        super().__init__(nPed, density, length, width, sync)
+
+    def populateCrowd(self):
+        for i in range(self.nPed):
+            self.addDeterministicPedestrian()
+
+
+class RandomCrowd(Crowd):
+    def __init__(self, nPed, density, length, width, sync):
+        super().__init__(nPed, density, length, width, sync)
+
+    def populateCrowd(self):
+        for i in range(self.nPed):
+            self.addRandomPedestrian()
+
+
+def getHumanProperties():
+    humanProperties = {}
+
+    with open('HumanProperties.csv', newline='') as csvFile:
+        csvReader = csv.reader(csvFile, delimiter=',')
+        lineCount = 0
+        for row in csvReader:
+            if lineCount > 0:
+                humanProperties['mean' + row[0]] = float(row[1])
+                humanProperties['sd' + row[0]] = float(row[2])
+                # print(f'{row[0]} has mean {row[1]} and standard deviation {row[2]}.')
+            lineCount += 1
+
+    return humanProperties
+
 # testcrowd = Crowd(0.5,100,2,0.1)
 # testcrowd.generateBodyProperties()
 # print(testcrowd.sPhase)
 
 # testcrowd = testCrowd(80,650,21500,2.10,math.pi,0,1.51,0)
+
+
+
