@@ -84,6 +84,12 @@ class Pedestrian:
     meanLognormalModel = 4.28  # mM
     sdLognormalModel = 0.21  # sM
 
+    detK = 14110
+    detVelocity = 1.25
+
+    synchedPace = 0
+    synchedPhase = 0
+
     def __init__(self, pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync):
         self.pMass = pMass
         self.pDamp = pDamp
@@ -99,37 +105,50 @@ class Pedestrian:
         cls.humanProperties = humanProperties
 
     @classmethod
-    def deterministicPedestrian(cls, location):
+    def setPaceAndPhase(cls, pace, phase):
+        cls.pace = pace
+        cls.phase = phase
+
+    @classmethod
+    def deterministicPedestrian(cls, location, synched=0):
         hp = cls.humanProperties
         pMass = hp['meanMass']
-        pDamp = hp['meanDamping']*2*math.sqrt()
+        pDamp = hp['meanDamping']*2*math.sqrt(cls.detK*hp['meanMass'])
         pStiff = 0
         pPace = 0
         pPhase = 0
         pLoc = location
-        pVel = 0
+        pVel = cls.detVelocity
         iSync = 0
         return cls(pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync)
 
     @classmethod
-    def randomPedestrain(cls, location, synched=0):
+    def randomPedestrian(cls, location, synched=0):
         hp = cls.humanProperties
         pMass = np.random.lognormal(mean=cls.meanLognormalModel, sigma=cls.sdLognormalModel)
         pDamp = np.random.normal(loc=hp['meanDamping'], scale=hp['sdDamping'])
         pStiff = np.random.normal(loc=hp['meanStiffness'], scale=hp['sdStiffness'])
-        pPace = np.random.normal(hp['meanPace'], hp['sdPace'])
-        pPhase = (2 * math.pi) * np.random.rand(1)
         pLoc = location
-        pStride = np.random.normal(hp['meanStride'], hp['sdStride'])
-        pVel = np.multiply(pPace, pStride)
+
         if synched == 1:
             iSync = 1
+            pPace = cls.synchedPace
+            pPhase = cls.synchedPhase
         else:
             iSync = 0
+            pPace = np.random.normal(hp['meanPace'], hp['sdPace'])
+            pPhase = (2 * math.pi) * np.random.rand(1)
+
+        pStride = np.random.normal(hp['meanStride'], hp['sdStride'])
+        pVel = np.multiply(pPace, pStride)
+
         return cls(pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync)
 
 
 class Crowd:
+
+    humanProperties = {}
+
     def __init__(self, density, length, width, sync):
         self.density = density
         self.length = length
@@ -141,14 +160,27 @@ class Crowd:
         self.lamda = self.numPedestrians / self.length
 
         self.locations = []
-        self.iSync = np.random.choice([0, 1], size=self.numPedestrians, p=[1-self.sync, self.sync])
+        self.iSync = []
         self.pedestrians = []
 
+        # Crowd synchronization
+        self.determineCrowdSynchronisation()
+
+    def determineCrowdSynchronisation(self):
+        self.iSync = np.random.choice([0, 1], size=self.numPedestrians, p=[1 - self.sync, self.sync])
+        pace = np.random.normal(self.humanProperties.meanPace, self.humanProperties.sdPace, size=1)
+        phase = (2 * math.pi) * (np.random.rand(1))
+        Pedestrian.setPaceAndPhase(pace, phase)
+
     def addRandomPedestrian(self, location, synched):
-        self.pedestrians.append(Pedestrian.randomPedestrain(location))
+        self.pedestrians.append(Pedestrian.randomPedestrian(location))
 
     def addDeterministicPedestrian(self, location, synched):
         self.pedestrians.append(Pedestrian.deterministicPedestrian(location))
+
+    @classmethod
+    def setHumanProperties(cls, humanProperties):
+        cls.humanProperties = humanProperties
 
 
 class SinglePedestrian(Pedestrian):
@@ -200,6 +232,12 @@ def getHumanProperties():
             lineCount += 1
 
     return humanProperties
+
+
+def updateHumanProperties(humanProperties):
+    Pedestrian.setHumanProperties(humanProperties)
+    Crowd.setHumanProperties(humanProperties)
+
 
 # testcrowd = Crowd(0.5,100,2,0.1)
 # testcrowd.generateBodyProperties()

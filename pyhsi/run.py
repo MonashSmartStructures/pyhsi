@@ -8,7 +8,7 @@ def main():
     # print(runParameters)
 
     humanProperties = getHumanProperties()
-    Pedestrian.setHumanProperties(humanProperties)
+    updateHumanProperties(humanProperties)
 
     # Crowd parameters
     density = 2
