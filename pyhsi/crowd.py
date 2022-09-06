@@ -81,6 +81,8 @@ class TestCrowd:
 class Pedestrian:
 
     humanProperties = {}
+    meanLognormalModel = 4.28  # mM
+    sdLognormalModel = 0.21  # sM
 
     def __init__(self, pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync):
         self.pMass = pMass
@@ -97,45 +99,56 @@ class Pedestrian:
         cls.humanProperties = humanProperties
 
     @classmethod
-    def deterministicPedestrian(cls):
-        pMass = cls.humanProperties['meanMass']
-        pDamp = 0
+    def deterministicPedestrian(cls, location):
+        hp = cls.humanProperties
+        pMass = hp['meanMass']
+        pDamp = hp['meanDamping']*2*math.sqrt()
         pStiff = 0
         pPace = 0
         pPhase = 0
-        pLoc = 0
+        pLoc = location
         pVel = 0
         iSync = 0
         return cls(pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync)
 
     @classmethod
-    def randomPedestrain(cls):
-        pMass = 0
-        pDamp = 0
-        pStiff = 0
-        pPace = 0
-        pPhase = 0
-        pLoc = 0
-        pVel = 0
-        iSync = 0
+    def randomPedestrain(cls, location, synched=0):
+        hp = cls.humanProperties
+        pMass = np.random.lognormal(mean=cls.meanLognormalModel, sigma=cls.sdLognormalModel)
+        pDamp = np.random.normal(loc=hp['meanDamping'], scale=hp['sdDamping'])
+        pStiff = np.random.normal(loc=hp['meanStiffness'], scale=hp['sdStiffness'])
+        pPace = np.random.normal(hp['meanPace'], hp['sdPace'])
+        pPhase = (2 * math.pi) * np.random.rand(1)
+        pLoc = location
+        pStride = np.random.normal(hp['meanStride'], hp['sdStride'])
+        pVel = np.multiply(pPace, pStride)
+        if synched == 1:
+            iSync = 1
+        else:
+            iSync = 0
         return cls(pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync)
 
 
 class Crowd:
-    def __init__(self, nPed, density, length, width, sync):
-        self.nPed = nPed
+    def __init__(self, density, length, width, sync):
         self.density = density
         self.length = length
         self.width = width
         self.sync = sync
 
+        self.area = self.length * self.width
+        self.numPedestrians = int(self.density * self.area)
+        self.lamda = self.numPedestrians / self.length
+
+        self.locations = []
+        self.iSync = np.random.choice([0, 1], size=self.numPedestrians, p=[1-self.sync, self.sync])
         self.pedestrians = []
 
-    def addRandomPedestrian(self):
-        self.pedestrians.append(Pedestrian.randomPedestrain())
+    def addRandomPedestrian(self, location, synched):
+        self.pedestrians.append(Pedestrian.randomPedestrain(location))
 
-    def addDeterministicPedestrian(self):
-        self.pedestrians.append(Pedestrian.deterministicPedestrian())
+    def addDeterministicPedestrian(self, location, synched):
+        self.pedestrians.append(Pedestrian.deterministicPedestrian(location))
 
 
 class SinglePedestrian(Pedestrian):
@@ -143,21 +156,34 @@ class SinglePedestrian(Pedestrian):
 
 
 class DeterministicCrowd(Crowd):
-    def __init__(self, nPed, density, length, width, sync):
-        super().__init__(nPed, density, length, width, sync)
+
+    arrivalGap = 1      # HSI Paper Section 5.4
+
+    def __init__(self, density, length, width, sync):
+        super().__init__(density, length, width, sync)
+        self.generateLocations()
+
+    def generateLocations(self):
+        self.locations = -self.arrivalGap*np.array(range(self.numPedestrians))
 
     def populateCrowd(self):
-        for i in range(self.nPed):
-            self.addDeterministicPedestrian()
+        for i in range(self.numPedestrians):
+            self.addDeterministicPedestrian(self.locations[i], self.iSync[i])
 
 
 class RandomCrowd(Crowd):
-    def __init__(self, nPed, density, length, width, sync):
-        super().__init__(nPed, density, length, width, sync)
+    def __init__(self, density, length, width, sync):
+        super().__init__(density, length, width, sync)
+        self.generateLocations()
+
+    def generateLocations(self):
+        gaps = np.random.exponential(1 / self.lamda, size=self.numPedestrians)
+        self.locations = np.cumsum(gaps, axis=None, dtype=None, out=None)
+        print(self.locations)
 
     def populateCrowd(self):
-        for i in range(self.nPed):
-            self.addRandomPedestrian()
+        for i in range(self.numPedestrians):
+            self.addRandomPedestrian(self.locations[i], self.iSync[i])
 
 
 def getHumanProperties():

@@ -5,3 +5,4 @@ setuptools~=57.0.0
 matplotlib~=3.5.2
 scipy~=1.8.1
 pandas~=1.4.2
+inquirer~=2.10.0

@@ -4,13 +4,21 @@ import inquirer
 
 def main():
 
-    runParameters = getRunParameters()
-    print(runParameters)
+    # runParameters = getRunParameters()
+    # print(runParameters)
 
     humanProperties = getHumanProperties()
     Pedestrian.setHumanProperties(humanProperties)
 
-    crowd = SinglePedestrian()
+    # Crowd parameters
+    density = 2
+    length = 50
+    width = 1
+    sync = 0
+
+    # crowd = SinglePedestrian()
+    crowd = DeterministicCrowd(density, length, width, sync)
+    crowd = RandomCrowd(density, length, width, sync)
 
 
 def runHSI():

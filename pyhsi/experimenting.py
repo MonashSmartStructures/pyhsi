@@ -1,12 +1,11 @@
 import numpy as np
+import math
+import matplotlib.pyplot as plt
 
 
 def main():
 
-    humanProperties = {}
-    humanProperties['mass'] = 75
-    humanProperties['height'] = 180
+    print((2 * math.pi) * np.random.rand(1))
 
-    print(humanProperties['mass'])
 
 main()
