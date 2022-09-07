@@ -6,8 +6,8 @@ from matplotlib import pyplot as plt
 from scipy.linalg import eig
 from scipy.linalg import eigh
 
-from crowd import Crowd, TestCrowd
-from beam import Beam
+from .crowd import *
+from .beam import *
 
 
 def fe_mf():
@@ -60,6 +60,9 @@ class FeMfSolver:
         self.maxRMS = max(self.rms)[0]
         print(f"Max RMS: {self.maxRMS:.6f} m/s^2")
 
+    # M - System mass
+    # C - System damping
+    # K - System stiffness
     def assembleMCK(self):
 
         nElements = self.beam.numElements
@@ -162,6 +165,7 @@ class FeMfSolver:
         plt.show()
 
 
+# ode45 1st order systems
 def newMark(t, M, C, K, F, u0, du0):
     # Select algorithm parameters
     gamma = 0.5
@@ -377,22 +381,23 @@ def timeRMS(t, x, RMS_Window=1):
     return rms
 
 
-fe_mf()
+if __name__ == "__main__":
+    fe_mf()
 
-# creating the dataset
-data = {'MATLAB': 0.241068, 'Python': 1}
-type = list(data.keys())
-values = list(data.values())
-fig = plt.figure(figsize=(5, 5))
+    # creating the dataset
+    data = {'MATLAB': 0.241068, 'Python': 1}
+    type = list(data.keys())
+    values = list(data.values())
+    fig = plt.figure(figsize=(5, 5))
 
-# creating the bar plot
-plt.bar(type, values, color='maroon',
-        width=0.5)
+    # creating the bar plot
+    plt.bar(type, values, color='maroon',
+            width=0.5)
 
-plt.xlabel("Toolbox")
-plt.ylabel("RMS Acceleration (m/s^2)")
-plt.title("Max RMS Comparison FE MF")
-#plt.show()
+    plt.xlabel("Toolbox")
+    plt.ylabel("RMS Acceleration (m/s^2)")
+    plt.title("Max RMS Comparison FE MF")
+    #plt.show()
 
 
 

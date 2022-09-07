@@ -17,8 +17,9 @@ def main():
     sync = 0
 
     # crowd = SinglePedestrian()
-    crowd = DeterministicCrowd(density, length, width, sync)
+    # crowd = DeterministicCrowd(density, length, width, sync)
     crowd = RandomCrowd(density, length, width, sync)
+    print(crowd)
 
 
 def runHSI():

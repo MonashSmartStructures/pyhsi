@@ -114,12 +114,20 @@ class Pedestrian:
         hp = cls.humanProperties
         pMass = hp['meanMass']
         pDamp = hp['meanDamping']*2*math.sqrt(cls.detK*hp['meanMass'])
-        pStiff = 0
-        pPace = 0
-        pPhase = 0
+        pStiff = cls.detK
         pLoc = location
+
+        if synched == 1:
+            iSync = 1
+            pPace = cls.synchedPace
+            pPhase = cls.synchedPhase
+        else:
+            iSync = 0
+            pPace = np.random.normal(hp['meanPace'], hp['sdPace'])
+            pPhase = (2 * math.pi) * np.random.rand()
+
         pVel = cls.detVelocity
-        iSync = 0
+
         return cls(pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync)
 
     @classmethod
@@ -137,7 +145,7 @@ class Pedestrian:
         else:
             iSync = 0
             pPace = np.random.normal(hp['meanPace'], hp['sdPace'])
-            pPhase = (2 * math.pi) * np.random.rand(1)
+            pPhase = (2 * math.pi) * np.random.rand()
 
         pStride = np.random.normal(hp['meanStride'], hp['sdStride'])
         pVel = np.multiply(pPace, pStride)
@@ -168,15 +176,15 @@ class Crowd:
 
     def determineCrowdSynchronisation(self):
         self.iSync = np.random.choice([0, 1], size=self.numPedestrians, p=[1 - self.sync, self.sync])
-        pace = np.random.normal(self.humanProperties.meanPace, self.humanProperties.sdPace, size=1)
-        phase = (2 * math.pi) * (np.random.rand(1))
+        pace = np.random.normal(loc=self.humanProperties['meanPace'], scale=self.humanProperties['sdPace'])
+        phase = (2 * math.pi) * (np.random.rand())
         Pedestrian.setPaceAndPhase(pace, phase)
 
     def addRandomPedestrian(self, location, synched):
-        self.pedestrians.append(Pedestrian.randomPedestrian(location))
+        self.pedestrians.append(Pedestrian.randomPedestrian(location, synched))
 
     def addDeterministicPedestrian(self, location, synched):
-        self.pedestrians.append(Pedestrian.deterministicPedestrian(location))
+        self.pedestrians.append(Pedestrian.deterministicPedestrian(location, synched))
 
     @classmethod
     def setHumanProperties(cls, humanProperties):
@@ -194,6 +202,7 @@ class DeterministicCrowd(Crowd):
     def __init__(self, density, length, width, sync):
         super().__init__(density, length, width, sync)
         self.generateLocations()
+        self.populateCrowd()
 
     def generateLocations(self):
         self.locations = -self.arrivalGap*np.array(range(self.numPedestrians))
@@ -207,11 +216,11 @@ class RandomCrowd(Crowd):
     def __init__(self, density, length, width, sync):
         super().__init__(density, length, width, sync)
         self.generateLocations()
+        self.populateCrowd()
 
     def generateLocations(self):
         gaps = np.random.exponential(1 / self.lamda, size=self.numPedestrians)
         self.locations = np.cumsum(gaps, axis=None, dtype=None, out=None)
-        print(self.locations)
 
     def populateCrowd(self):
         for i in range(self.numPedestrians):
@@ -221,14 +230,13 @@ class RandomCrowd(Crowd):
 def getHumanProperties():
     humanProperties = {}
 
-    with open('HumanProperties.csv', newline='') as csvFile:
+    with open('../pyhsi/HumanProperties.csv', newline='') as csvFile:
         csvReader = csv.reader(csvFile, delimiter=',')
         lineCount = 0
         for row in csvReader:
             if lineCount > 0:
                 humanProperties['mean' + row[0]] = float(row[1])
                 humanProperties['sd' + row[0]] = float(row[2])
-                # print(f'{row[0]} has mean {row[1]} and standard deviation {row[2]}.')
             lineCount += 1
 
     return humanProperties
@@ -241,7 +249,6 @@ def updateHumanProperties(humanProperties):
 
 # testcrowd = Crowd(0.5,100,2,0.1)
 # testcrowd.generateBodyProperties()
-# print(testcrowd.sPhase)
 
 # testcrowd = testCrowd(80,650,21500,2.10,math.pi,0,1.51,0)
 
