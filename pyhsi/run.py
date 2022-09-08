@@ -1,4 +1,5 @@
 from crowd import *
+from fe_mf import *
 import inquirer
 
 
@@ -18,8 +19,14 @@ def main():
 
     # crowd = SinglePedestrian()
     # crowd = DeterministicCrowd(density, length, width, sync)
-    crowd = RandomCrowd(density, length, width, sync)
-    print(crowd)
+    # crowd = RandomCrowd(density, length, width, sync)
+
+    m = 73.85
+    k = 14.11e3
+    xi = 0.3
+    crowd = SinglePedestrian(m, xi * 2 * math.sqrt(k * m), k, 2, 0, 0, 1.25, 0)
+
+    fe_mf(crowd)
 
 
 def runHSI():

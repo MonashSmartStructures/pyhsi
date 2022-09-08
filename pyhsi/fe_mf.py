@@ -6,21 +6,16 @@ from matplotlib import pyplot as plt
 from scipy.linalg import eig
 from scipy.linalg import eigh
 
-from .crowd import *
-from .beam import *
+# from .crowd import *
+from pyhsi.beam import *
 
 
-def fe_mf():
+def fe_mf(crowd):
     # Guess number of steps
     nSteps = 5000
 
     # Create crowd and beam objects
     # crowd = TestCrowd(80, 650, 21500, 2.10, math.pi, 0, 1.51, 0)
-
-    m = 73.85
-    k = 14.11e3
-    xi = 0.3
-    crowd = TestCrowd(m, xi * 2 * math.sqrt(k * m), k, 2, 0, 0, 1.25, 0)
 
     # run fe_mf_crowd_solve
     fe_mf_solver = FeMfSolver(crowd, nSteps)
@@ -219,6 +214,8 @@ def newMark(t, M, C, K, F, u0, du0):
 
 
 def simTime(crowd, beam, nSteps):
+    # TODO: Adjust to work with crowd of greater than 1
+
     # Returns the simulation time frame for a given pace and stride vector
     f = 1 / (2 * math.pi) * (math.pi / beam.length) ** 2 * math.sqrt(beam.EI / beam.linearMass)
     Period = 1 / f
@@ -226,7 +223,7 @@ def simTime(crowd, beam, nSteps):
     pVel = crowd.pVel
     Toff = (-crowd.pLoc + beam.length) / pVel
     Tend = 1.1 * Toff
-    dT = Tend / (nSteps)
+    dT = Tend / nSteps
     dT = min(dT, dTmax)
     t = np.arange(0, Tend, dT)  # Rounding error created by differing precision in Python vs MATLAB
     return t, dT  # may have caused discrepancies in output values.
@@ -382,21 +379,22 @@ def timeRMS(t, x, RMS_Window=1):
 
 
 if __name__ == "__main__":
-    fe_mf()
-
-    # creating the dataset
-    data = {'MATLAB': 0.241068, 'Python': 1}
-    type = list(data.keys())
-    values = list(data.values())
-    fig = plt.figure(figsize=(5, 5))
-
-    # creating the bar plot
-    plt.bar(type, values, color='maroon',
-            width=0.5)
-
-    plt.xlabel("Toolbox")
-    plt.ylabel("RMS Acceleration (m/s^2)")
-    plt.title("Max RMS Comparison FE MF")
+    print("cant run from here at the moment")
+    # fe_mf()
+    #
+    # # creating the dataset
+    # data = {'MATLAB': 0.241068, 'Python': 1}
+    # type = list(data.keys())
+    # values = list(data.values())
+    # fig = plt.figure(figsize=(5, 5))
+    #
+    # # creating the bar plot
+    # plt.bar(type, values, color='maroon',
+    #         width=0.5)
+    #
+    # plt.xlabel("Toolbox")
+    # plt.ylabel("RMS Acceleration (m/s^2)")
+    # plt.title("Max RMS Comparison FE MF")
     #plt.show()
 
 
