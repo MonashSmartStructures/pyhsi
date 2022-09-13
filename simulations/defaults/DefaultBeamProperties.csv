@@ -1,0 +1,10 @@
+numElements,10
+length,50
+width,2
+height,0.6
+E,2E+11
+modelDampingRatio,0.005
+nHigh,3
+area,0.3162
+linearMass,500
+beamFreq,2

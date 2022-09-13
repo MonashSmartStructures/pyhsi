@@ -1,0 +1,38 @@
+Beam
+numElements
+length
+width
+height
+E
+modelDampingRatio
+nHigh
+area
+linearMass
+beamFreq
+
+Crowd
+Type
+numPedestrians
+length
+width
+
+Human Properties
+meanMass
+sdMass
+meanPace
+sdPace
+meanStride
+sdStride
+meanStiffness
+sdStiffness
+meanDamping
+sdDamping
+
+Pedestrian Models
+Moving Mass
+Moving Force
+Spring Mass Damper
+
+Model Type
+Finite Element
+Modal

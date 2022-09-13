@@ -7,7 +7,7 @@ from scipy.linalg import eig
 from scipy.linalg import eigh
 
 # from .crowd import *
-from pyhsi.beam import *
+from beam import *
 
 
 def fe_mf(crowd):
