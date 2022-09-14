@@ -1,10 +1,4 @@
-meanMass,73.85
-sdMass,15.68
-meanPace,1.96
-sdPace,0.209
-meanStride,0.66
-sdStride,0.066
-meanStiffness,28000
-sdStiffness,2800
-meanDamping,0.3
-sdDamping,0.03
+numPedestrians,100
+crowdLength,50
+crowdWidth,1
+percentSynchronised,0

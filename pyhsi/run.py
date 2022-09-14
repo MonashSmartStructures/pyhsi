@@ -173,7 +173,6 @@ class SimulationSetup:
             answer = inquirer.prompt(question)
 
     def createSimulation(self):
-        # TODO: Finish method
         self.enterBeamProperties()
         self.enterCrowdOptions()
         self.enterHumanProperties()
@@ -196,12 +195,6 @@ class SimulationSetup:
         path = ''
         if self.filename != '':
             path = self.filename
-            # overwriteMessage = "Would you like to overwrite the file saved at {filename} or save as a new file?"
-            # overwriteChoices = ["Overwrite", "Save as new file"]
-            # overwriteQuestion = [inquirer.List('overwrite', message=overwriteMessage, choices=overwriteChoices)]
-            # overwriteAnswer = inquirer.prompt(overwriteQuestion)
-            # if overwriteAnswer == "Overwrite":
-            #     path = self.filename
 
         if path == '':
             filenameMessage = "Enter a filename"
@@ -342,23 +335,35 @@ class SimulationSetup:
             linearMassMessage = 'Linear mass of the beam (kg/m)'
             beamFreqMessage = 'Beam frequency (Hz)'
 
-            humanPropertiesQuestions = [
-                inquirer.Text('meanMass', message=numElementsMessage),
-                inquirer.Text('sdMass', message=lengthMessage),
-                inquirer.Text('meanPace', message=widthMessage),
-                inquirer.Text('sdPace', message=heightMessage),
-                inquirer.Text('meanStride', message=EMessage),
-                inquirer.Text('sdStride', message=modalDampingRatioMessage),
-                inquirer.Text('meanStiffness', message=nHighMessage),
-                inquirer.Text('sdStiffness', message=areaMessage),
-                inquirer.Text('meanDamping', message=linearMassMessage),
-                inquirer.Text('sdDamping', message=beamFreqMessage)
+            # Add the current value if editing
+            numElementsDefault = self.beamProperties['numElements'] if 'numElements' in self.beamProperties else None
+            lengthDefault = self.beamProperties['length'] if 'length' in self.beamProperties else None
+            widthDefault = self.beamProperties['width'] if 'width' in self.beamProperties else None
+            heightDefault = self.beamProperties['height'] if 'height' in self.beamProperties else None
+            EDefault = self.beamProperties['E'] if 'E' in self.beamProperties else None
+            modalDampingRatioDefault = self.beamProperties['modalDampingRatio'] if 'modalDampingRatio' in self.beamProperties else None
+            nHighDefault = self.beamProperties['nHigh'] if 'nHigh' in self.beamProperties else None
+            areaDefault = self.beamProperties['area'] if 'area' in self.beamProperties else None
+            linearDefault = self.beamProperties['linearMass'] if 'linearMass' in self.beamProperties else None
+            beamFreqDefault = self.beamProperties['beamFreq'] if 'beamFreq' in self.beamProperties else None
+
+            beamPropertiesQuestions = [
+                inquirer.Text('numElements', message=numElementsMessage, default=numElementsDefault),
+                inquirer.Text('length', message=lengthMessage, default=lengthDefault),
+                inquirer.Text('width', message=widthMessage, default=widthDefault),
+                inquirer.Text('height', message=heightMessage, default=heightDefault),
+                inquirer.Text('E', message=EMessage, default=EDefault),
+                inquirer.Text('modalDampingRatio', message=modalDampingRatioMessage, default=modalDampingRatioDefault),
+                inquirer.Text('nHigh', message=nHighMessage, default=nHighDefault),
+                inquirer.Text('area', message=areaMessage, default=areaDefault),
+                inquirer.Text('linearMass', message=linearMassMessage, default=linearDefault),
+                inquirer.Text('beamFreq', message=beamFreqMessage, default=beamFreqDefault)
             ]
 
-            humanPropertiesAnswers = inquirer.prompt(humanPropertiesQuestions)
+            beamPropertiesAnswers = inquirer.prompt(beamPropertiesQuestions)
 
-            for i in humanPropertiesAnswers:
-                self.humanProperties[i] = humanPropertiesAnswers[i]
+            for i in beamPropertiesAnswers:
+                self.humanProperties[i] = beamPropertiesAnswers[i]
 
     def enterCrowdOptions(self):
         # Get crowd type
@@ -378,6 +383,13 @@ class SimulationSetup:
         crowdWidthMessage = 'What is the width of the crowd?'
         percentSynchronisedMessage = 'What percentage of pedestrians in the crowd are synchronised?'
 
+        # Add the current value if editing
+        numCrowdsDefault = self.crowdOptions['numCrowds'] if 'numCrowds' in self.crowdOptions else None
+        numPedestriansDefault = self.crowdOptions['numPedestrians'] if 'numPedestrians' in self.crowdOptions else None
+        crowdLengthDefault = self.crowdOptions['crowdLength'] if 'crowdLength' in self.crowdOptions else None
+        crowdWidthDefault = self.crowdOptions['crowdWidth'] if 'crowdWidth' in self.crowdOptions else None
+        percentSynchronisedDefault = self.crowdOptions['percentSynchronised'] if 'percentSynchronised' in self.crowdOptions else None
+
         if crowdType == 'n Random Crowds':
             # Change the wording and add number of crowds
             numCrowdsMessage = 'How many random crowds?'
@@ -386,7 +398,7 @@ class SimulationSetup:
             crowdWidthMessage = 'What is the width of each crowd?'
             percentSynchronisedMessage = 'What percentage of pedestrians in each crowd are synchronised?'
 
-            crowdPropertiesQuestions.append(inquirer.Text('numCrowds', message=numCrowdsMessage))
+            crowdPropertiesQuestions.append(inquirer.Text('numCrowds', message=numCrowdsMessage, default=numCrowdsDefault))
 
         if crowdType != 'Single Pedestrian':
             # Ask the user if they want to import the default deterministic crowd
@@ -395,10 +407,10 @@ class SimulationSetup:
                 self.loadDefaultCrowdDimensions()
             else:
                 # Ask the questions
-                crowdPropertiesQuestions.append(inquirer.Text('numPedestrians', message=numPedestriansMessage))
-                crowdPropertiesQuestions.append(inquirer.Text('crowdLength', message=crowdLengthMessage))
-                crowdPropertiesQuestions.append(inquirer.Text('crowdWidth', message=crowdWidthMessage))
-                crowdPropertiesQuestions.append(inquirer.Text('percentSynchronised', message=percentSynchronisedMessage))
+                crowdPropertiesQuestions.append(inquirer.Text('numPedestrians', message=numPedestriansMessage, default=numPedestriansDefault))
+                crowdPropertiesQuestions.append(inquirer.Text('crowdLength', message=crowdLengthMessage, default=crowdLengthDefault))
+                crowdPropertiesQuestions.append(inquirer.Text('crowdWidth', message=crowdWidthMessage, default=crowdWidthDefault))
+                crowdPropertiesQuestions.append(inquirer.Text('percentSynchronised', message=percentSynchronisedMessage, default=percentSynchronisedDefault))
 
                 crowdPropertiesAnswers = inquirer.prompt(crowdPropertiesQuestions)
 
@@ -423,17 +435,28 @@ class SimulationSetup:
             meanDampingMessage = 'Mean damping of a pedestrian (Ns/m?)'
             sdDampingMessage = 'Standard deviation of damping of a pedestrian (Ns/m)'
 
+            meanMassDefault = self.humanProperties['meanMass'] if 'meanMass' in self.humanProperties else None
+            sdMassDefault = self.humanProperties['sdMass'] if 'sdMass' in self.humanProperties else None
+            meanPaceDefault = self.humanProperties['meanPace'] if 'meanPace' in self.humanProperties else None
+            sdPaceDefault = self.humanProperties['sdPace'] if 'sdPace' in self.humanProperties else None
+            meanStrideDefault = self.humanProperties['meanStride'] if 'meanStride' in self.humanProperties else None
+            sdStrideDefault = self.humanProperties['sdStride'] if 'sdStride' in self.humanProperties else None
+            meanStiffnessDefault = self.humanProperties['meanStiffness'] if 'meanStiffness' in self.humanProperties else None
+            sdStiffnessDefault = self.humanProperties['sdStiffness'] if 'sdStiffness' in self.humanProperties else None
+            meanDampingDefault = self.humanProperties['meanDamping'] if 'meanDamping' in self.humanProperties else None
+            sdDampingDefault = self.humanProperties['sdDamping'] if 'sdDamping' in self.humanProperties else None
+
             humanPropertiesQuestions = [
-                inquirer.Text('meanMass', message=meanMassMessage),
-                inquirer.Text('sdMass', message=sdMassMessage),
-                inquirer.Text('meanPace', message=meanPaceMessage),
-                inquirer.Text('sdPace', message=sdPaceMessage),
-                inquirer.Text('meanStride', message=meanStrideMessage),
-                inquirer.Text('sdStride', message=sdStrideMessage),
-                inquirer.Text('meanStiffness', message=meanStiffnessMessage),
-                inquirer.Text('sdStiffness', message=sdStiffnessMessage),
-                inquirer.Text('meanDamping', message=meanDampingMessage),
-                inquirer.Text('sdDamping', message=sdDampingMessage)
+                inquirer.Text('meanMass', message=meanMassMessage, default=meanMassDefault),
+                inquirer.Text('sdMass', message=sdMassMessage, default=sdMassDefault),
+                inquirer.Text('meanPace', message=meanPaceMessage, default=meanPaceDefault),
+                inquirer.Text('sdPace', message=sdPaceMessage, default=sdPaceDefault),
+                inquirer.Text('meanStride', message=meanStrideMessage, default=meanStrideDefault),
+                inquirer.Text('sdStride', message=sdStrideMessage, default=sdStrideDefault),
+                inquirer.Text('meanStiffness', message=meanStiffnessMessage, default=meanStiffnessDefault),
+                inquirer.Text('sdStiffness', message=sdStiffnessMessage, default=sdStiffnessDefault),
+                inquirer.Text('meanDamping', message=meanDampingMessage, default=meanDampingDefault),
+                inquirer.Text('sdDamping', message=sdDampingMessage, default=sdDampingDefault)
             ]
 
             humanPropertiesAnswers = inquirer.prompt(humanPropertiesQuestions)
@@ -444,8 +467,9 @@ class SimulationSetup:
     def enterPedestrianModels(self):
         pedestrianModelMessage = 'Which model type(s) would you like to use?'
         pedestrianModelChoices = ['Moving Mass', 'Moving Force', 'Spring Mass Damper']
+        pedestrianModelDefaults = self.pedestrianModels
         pedestrianModelQuestion = [
-            inquirer.Checkbox('pedestrianModel', message=pedestrianModelMessage, choices=pedestrianModelChoices,)
+            inquirer.Checkbox('pedestrianModel', message=pedestrianModelMessage, choices=pedestrianModelChoices, default=pedestrianModelDefaults)
         ]
         pedestrianModelAnswer = inquirer.prompt(pedestrianModelQuestion)
 
@@ -454,8 +478,9 @@ class SimulationSetup:
     def enterModelTypes(self):
         modelTypesMessage = 'Which pedestrian model(s) would you like to use?'
         modelTypesChoices = ['Modal Analysis', 'Finite Element']
+        modelTypesDefaults = self.modelTypes
         modelTypesQuestion = [
-            inquirer.Checkbox('modelTypes', message=modelTypesMessage, choices=modelTypesChoices)
+            inquirer.Checkbox('modelTypes', message=modelTypesMessage, choices=modelTypesChoices, default=modelTypesDefaults)
         ]
         modelTypesAnswer = inquirer.prompt(modelTypesQuestion)
 
