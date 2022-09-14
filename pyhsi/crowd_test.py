@@ -13,7 +13,7 @@ def testRandomCrowd():
     hsi.updateHumanProperties(humanProperties)
 
     # Crowd parameters
-    density = 2
+    numPedestrians = 100
     length = 50
     width = 1
     sync = 0
@@ -21,7 +21,7 @@ def testRandomCrowd():
     # Create n crowds
     crowds = []
     for i in range(n):
-        crowds.append(hsi.RandomCrowd(density, length, width, sync))
+        crowds.append(hsi.RandomCrowd(numPedestrians, length, width, sync))
 
     pAll = getPedestrianDistribution(crowds)
     plotPedestrianDistribution(pAll, 'Distribution of pedestrian properties for random crowd')
@@ -35,7 +35,7 @@ def testDeterministicCrowd():
     hsi.updateHumanProperties(humanProperties)
 
     # Crowd parameters
-    density = 2
+    numPedestrians = 100
     length = 50
     width = 1
     sync = 0
@@ -43,7 +43,7 @@ def testDeterministicCrowd():
     # Create n crowds
     crowds = []
     for i in range(n):
-        crowds.append(hsi.DeterministicCrowd(density, length, width, sync))
+        crowds.append(hsi.DeterministicCrowd(numPedestrians, length, width, sync))
 
     pAll = getPedestrianDistribution(crowds)
     plotPedestrianDistribution(pAll, 'Distribution of pedestrian properties for deterministic crowd')

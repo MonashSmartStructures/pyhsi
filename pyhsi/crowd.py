@@ -82,14 +82,15 @@ class Crowd:
 
     humanProperties = {}
 
-    def __init__(self, density, length, width, sync):
-        self.density = density
+    def __init__(self, numPedestrians, length, width, sync):
+        # self.density = density
+        self.numPedestrians = numPedestrians
         self.length = length
         self.width = width
         self.sync = sync
 
         self.area = self.length * self.width
-        self.numPedestrians = int(self.density * self.area)
+        # self.numPedestrians = int(self.density * self.area)
         self.lamda = self.numPedestrians / self.length
 
         self.locations = []
