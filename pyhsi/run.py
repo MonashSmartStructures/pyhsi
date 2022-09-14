@@ -3,6 +3,8 @@ from fe_mf import *
 import inquirer
 import csv
 import pprint
+import tkinter as tk
+from tkinter import filedialog
 
 
 def main1():
@@ -88,10 +90,12 @@ def getRunParameters():
 
 
 def main():
-    sim = Simulation()
+    sim = SimulationSetup()
+    sim.run()
+    # sim = Simulation.quickLoad('../simulations/sim1.csv')
 
 
-class Simulation:
+class SimulationSetup:
     filename = ''
     beamProperties = {}
     crowdOptions = {}
@@ -99,7 +103,50 @@ class Simulation:
     pedestrianModels = []
     modelTypes = []
 
-    def __init__(self):
+    def __init__(self, filename=None):
+        if not filename:
+            self.populate()
+        else:
+            self.loadSimulation(filename)
+        self.next()
+
+    def __str__(self):
+        # Display the crowd properties in a readable format
+        simRepresentation = '--------------------------------------------------\n'
+        simRepresentation += 'Name: {filename}\n'.format(filename=self.filename)
+        simRepresentation += '--------------------------------------------------\n'
+
+        simRepresentation += '-Beam-\n'
+        for i in self.beamProperties:
+            simRepresentation += '{property}: {value}\n'.format(property=i, value=self.beamProperties[i])
+        simRepresentation += '--------------------------------------------------\n'
+
+        simRepresentation += '-Crowd Options-\n'
+        for i in self.crowdOptions:
+            simRepresentation += '{property}: {value}\n'.format(property=i, value=self.crowdOptions[i])
+        simRepresentation += '--------------------------------------------------\n'
+
+        simRepresentation += '-Human Properties-\n'
+        for i in self.humanProperties:
+            simRepresentation += '{property}: {value}\n'.format(property=i, value=self.humanProperties[i])
+        simRepresentation += '--------------------------------------------------\n'
+
+        simRepresentation += '-Pedestrian Models-\n'
+        for i in self.pedestrianModels:
+            simRepresentation += i + '\n'
+        simRepresentation += '--------------------------------------------------\n'
+
+        simRepresentation += '-Model Types-\n'
+        for i in self.modelTypes:
+            simRepresentation += i + '\n'
+        simRepresentation += '--------------------------------------------------\n'
+
+        return simRepresentation
+
+    def run(self):
+        pass
+
+    def populate(self):
         # Get the simulation properties
         choices = ['Create a new simulation', 'Load simulation']
         question = [inquirer.List('simSource', message="How would you like to start?", choices=choices)]
@@ -110,8 +157,9 @@ class Simulation:
         elif answer['simSource'] == "Load simulation":
             self.loadSimulation()
 
+    def next(self):
         # Options now the simulation properties are loaded
-        choices = ['Run the simulation', 'Edit the simulation properties', 'View the simulation properties']
+        choices = ['Run the simulation', 'Edit the simulation properties', 'View the simulation properties', 'Cancel']
         question = [inquirer.List('next', message="How would you like to proceed?", choices=choices)]
         answer = inquirer.prompt(question)
 
@@ -120,11 +168,9 @@ class Simulation:
                 self.editSimulation()
             elif answer['next'] == 'View the simulation properties':
                 print(self)
+            elif answer['next'] == 'Cancel':
+                return
             answer = inquirer.prompt(question)
-
-    def __str__(self):
-        # Display the crowd properties in a readable format
-        return "Here are the properties of this simulation."
 
     def createSimulation(self):
         # TODO: Finish method
@@ -136,7 +182,7 @@ class Simulation:
 
         # Output properties?
 
-        saveMessage = 'Whould you like to save this simulation configuration?'
+        saveMessage = 'Would you like to save this simulation configuration?'
         saveChoices = ["Save as", "Don't save", "Edit simulation configuration"]
         saveQuestion = [inquirer.List('save', message=saveMessage, choices=saveChoices)]
         saveAnswer = inquirer.prompt(saveQuestion)
@@ -147,24 +193,135 @@ class Simulation:
             self.editSimulation()
 
     def saveSimulation(self):
-        # TODO: Write method
-
+        path = ''
         if self.filename != '':
-            overwriteMessage = "Would you like to overwrite the file saved at {filename} or save as a new file?"
-            overwriteChoices = ["Overwrite", "Save as new file"]
-            overwriteQuestion = [inquirer.List('overwrite', message=overwriteMessage, choices=overwriteChoices)]
-            overwriteAnswer = inquirer.prompt(overwriteQuestion)
+            path = self.filename
+            # overwriteMessage = "Would you like to overwrite the file saved at {filename} or save as a new file?"
+            # overwriteChoices = ["Overwrite", "Save as new file"]
+            # overwriteQuestion = [inquirer.List('overwrite', message=overwriteMessage, choices=overwriteChoices)]
+            # overwriteAnswer = inquirer.prompt(overwriteQuestion)
+            # if overwriteAnswer == "Overwrite":
+            #     path = self.filename
 
-        # Would you like to overwrite
-        pass
+        if path == '':
+            filenameMessage = "Enter a filename"
+            filenameQuestion = [inquirer.Text('filename', message=filenameMessage)]
+            filenameAnswer = inquirer.prompt(filenameQuestion)
+            path = '../simulations/{filename}.csv'.format(filename=filenameAnswer['filename'])
+            # TODO: Check if file already exists
+            self.filename = path
 
-    def loadSimulation(self):
-        # TODO: Write method
-        pass
+        with open(path, 'w', newline='') as f:
+            writer = csv.writer(f)
+
+            # Beam
+            writer.writerow(['Beam'])
+            for i in self.beamProperties:
+                writer.writerow([i, self.beamProperties[i]])
+            writer.writerow('')
+
+            # Crowd
+            writer.writerow(['Crowd'])
+            for i in self.crowdOptions:
+                writer.writerow([i, self.crowdOptions[i]])
+            writer.writerow('')
+
+            # Human Properties
+            writer.writerow(['Human Properties'])
+            for i in self.humanProperties:
+                writer.writerow([i, self.humanProperties[i]])
+            writer.writerow('')
+
+            # Pedestrian Models
+            writer.writerow(['Pedestrian Models'])
+            for i in self.pedestrianModels:
+                writer.writerow([i])
+            writer.writerow('')
+
+            # Model Types
+            writer.writerow(['Model Types'])
+            for i in self.modelTypes:
+                writer.writerow([i])
+
+            f.close()
+
+    def loadSimulation(self, filename=None):
+        # Get the file to load the simulation from
+        # TODO: Allow user to select file from file explorer
+        if not filename:
+            filenameMessage = "Enter the filename"
+            filenameQuestion = [inquirer.Text('filename', message=filenameMessage)]
+            filenameAnswer = inquirer.prompt(filenameQuestion)
+            filename = '../simulations/{filename}'.format(filename=filenameAnswer['filename'])
+            if not filename[-4:] == '.csv':
+                filename += '.csv'
+
+        # TODO: Check if the file exists
+        print('Loading simulation from: {filename}'.format(filename=filename))
+        self.filename = filename
+
+        # Read from the file
+        with open(filename, newline='') as csvFile:
+            csvReader = csv.reader(csvFile, delimiter=',')
+
+            # beamProperties
+            prop = ''
+            for row in csvReader:
+                if not row:
+                    prop = ''
+                    continue
+
+                if prop == 'Beam':
+                    self.beamProperties[row[0]] = row[1]
+
+                elif prop == 'Crowd':
+                    self.crowdOptions[row[0]] = row[1]
+
+                elif prop == 'Human Properties':
+                    self.humanProperties[row[0]] = row[1]
+
+                elif prop == 'Pedestrian Models':
+                    self.pedestrianModels.append(row[0])
+
+                elif prop == 'Model Types':
+                    self.modelTypes.append(row[0])
+
+                props = ['Beam', 'Crowd', 'Human Properties', 'Pedestrian Models', 'Model Types']
+                if row[0] in props:
+                    prop = row[0]
 
     def editSimulation(self):
-        # TODO: Write method
-        pass
+        editMessage = 'What would like to edit?'
+        editChoices = ["Stop Editing", "Beam Properties", "Crowd Options", "Human Properties", "Pedestrian Models", "Model Types"]
+        editQuestion = [inquirer.List('edit', message=editMessage, choices=editChoices)]
+        editAnswer = inquirer.prompt(editQuestion)
+
+        while editAnswer['edit'] != "Stop Editing":
+            if editAnswer['edit'] == 'Beam Properties':
+                self.enterBeamProperties()
+            elif editAnswer['edit'] == 'Crowd Options':
+                self.enterCrowdOptions()
+            elif editAnswer['edit'] == 'Human Properties':
+                self.enterHumanProperties()
+            elif editAnswer['edit'] == 'Pedestrian Models':
+                self.enterPedestrianModels()
+            elif editAnswer['edit'] == 'Model Types':
+                self.enterModelTypes()
+
+            editAnswer = inquirer.prompt(editQuestion)
+
+        saveMessage = 'Would you like to save this simulation configuration?'
+        saveChoices = ["Save", "Save as", "Don't save"]
+        saveQuestion = [inquirer.List('save', message=saveMessage, choices=saveChoices)]
+        saveAnswer = inquirer.prompt(saveQuestion)
+
+        if saveAnswer['save'] == "Save":
+            self.saveSimulation()
+        elif saveAnswer['save'] == "Save as":
+            self.filename = ''
+            self.saveSimulation()
+        elif saveAnswer['save'] == "Edit simulation configuration":
+            self.editSimulation()
 
     # region Enter properties
     def enterBeamProperties(self):
@@ -286,7 +443,7 @@ class Simulation:
 
     def enterPedestrianModels(self):
         pedestrianModelMessage = 'Which model type(s) would you like to use?'
-        pedestrianModelChoices = ['Moving Mass', 'Spring Mass Damper', 'Moving Force']
+        pedestrianModelChoices = ['Moving Mass', 'Moving Force', 'Spring Mass Damper']
         pedestrianModelQuestion = [
             inquirer.Checkbox('pedestrianModel', message=pedestrianModelMessage, choices=pedestrianModelChoices,)
         ]
@@ -298,11 +455,11 @@ class Simulation:
         modelTypesMessage = 'Which pedestrian model(s) would you like to use?'
         modelTypesChoices = ['Modal Analysis', 'Finite Element']
         modelTypesQuestion = [
-            inquirer.Checkbox('modelTypes', message=modelTypesMessage, choices=modelTypesChoices, )
+            inquirer.Checkbox('modelTypes', message=modelTypesMessage, choices=modelTypesChoices)
         ]
         modelTypesAnswer = inquirer.prompt(modelTypesQuestion)
 
-        self.pedestrianModels = modelTypesAnswer['modelTypes']
+        self.modelTypes = modelTypesAnswer['modelTypes']
     # endregion
 
     # region Load from default
@@ -337,10 +494,9 @@ class Simulation:
 
     # endregion
 
-    # region Display Attributes
-    def displayHumanProperties(self):
-        pprint.pprint(self.humanProperties, sort_dicts=False)
-    # endregion
+    @classmethod
+    def quickLoad(cls, filename):
+        return cls(filename)
 
 
 if __name__ == '__main__':

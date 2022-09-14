@@ -22,6 +22,8 @@ def fe_mf(crowd):
     fe_mf_solver.plotAcceleration()
 
 
+
+
 class FeMfSolver:
     # This may eventually be a general solver for all model types
 
@@ -159,7 +161,7 @@ class FeMfSolver:
         plt.xlim([0, 40])
         plt.show()
 
-
+# TODO: write nonLinearNewMarkBeta
 # ode45 1st order systems
 def newMark(t, M, C, K, F, u0, du0):
     # Select algorithm parameters
