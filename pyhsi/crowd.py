@@ -118,6 +118,20 @@ class Crowd:
 
 
 class SinglePedestrian(Pedestrian):
+
+    def __init__(self):
+        k = 14.11e3
+
+        pMass = self.humanProperties['meanMass']
+        pDamp = self.humanProperties['meanDamping'] * 2 * math.sqrt(k * pMass)
+        pStiff = k
+        pPace = 2
+        pPhase = 0
+        pLoc = 0
+        pVel = 1.25
+        iSync = 0
+        super().__init__(pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync)
+
     pass
 
 

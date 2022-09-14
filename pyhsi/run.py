@@ -27,7 +27,7 @@ def main1():
     m = 73.85
     k = 14.11e3
     xi = 0.3
-    crowd = SinglePedestrian(m, xi * 2 * math.sqrt(k * m), k, 2, 0, 0, 1.25, 0)
+    crowd = SinglePedestrian()
 
     fe_mf(crowd)
 
@@ -144,7 +144,63 @@ class SimulationSetup:
         return simRepresentation
 
     def run(self):
-        pass
+        # TODO: Do we want to run the simulations from here or pass the object to the solver?
+        # Update the human properties of the crowd
+        updateHumanProperties(self.humanProperties)
+
+        # Generate the beam
+        # TODO: Add beam properties to the beam
+        beam = Beam()
+
+        # Generate the crowd
+        crowdType = self.crowdOptions['type']
+        if crowdType == "Single Pedestrian":
+            crowd = SinglePedestrian()
+        elif crowdType == "Deterministic Crowd":
+            crowd = DeterministicCrowd(
+                self.crowdOptions['numPedestrians'],
+                self.crowdOptions['crowdLength'],
+                self.crowdOptions['crowdWidth'],
+                self.crowdOptions['percentSynchronised'])
+        elif crowdType == "Random Crowd":
+            crowd = RandomCrowd(
+                self.crowdOptions['numPedestrians'],
+                self.crowdOptions['crowdLength'],
+                self.crowdOptions['crowdWidth'],
+                self.crowdOptions['percentSynchronised'])
+        elif crowdType == "n Random Crowds":
+            # TODO: Implement n Random Crowds
+            print("Not implemented")
+
+        # Run the simulation for each model combination
+        if "Finite Element" in self.modelTypes:
+            if "Moving Mass" in self.pedestrianModels:
+                # FE MM
+                print("Solving system with a 'Finite Element - Moving Mass' model")
+                # results = FeMMSolver(crowd, beam)
+            if "Moving Force" in self.pedestrianModels:
+                # FE MF
+                print("Solving system with a 'Finite Element - Moving Force' model")
+                # results = FeMfSolver(crowd, beam)
+            if "Spring Mass Damper" in self.pedestrianModels:
+                # FE SMD
+                print("Solving system with a 'Finite Element - Spring Mass Damper' model")
+                # results = FeSMDSolver(crowd, beam)
+        if "Modal Analysis" in self.modelTypes:
+            if "Moving Mass" in self.pedestrianModels:
+                # MO MM
+                print("Solving system with a 'Modal Analysis - Moving Mass' model")
+                # results = MoMMSolver(crowd, beam)
+            if "Moving Force" in self.pedestrianModels:
+                # MO MF
+                print("Solving system with a 'Modal Analysis - Moving Force' model")
+                # results = MoMfSolver(crowd, beam)
+            if "Spring Mass Damper" in self.pedestrianModels:
+                # MO SMD
+                print("Solving system with a 'Modal Analysis - Sprint Mass Damper' model")
+                # results = MoSMDSolver(crowd, beam)
+
+        # TODO: Determine how to present results
 
     def populate(self):
         # Get the simulation properties
@@ -477,7 +533,7 @@ class SimulationSetup:
 
     def enterModelTypes(self):
         modelTypesMessage = 'Which pedestrian model(s) would you like to use?'
-        modelTypesChoices = ['Modal Analysis', 'Finite Element']
+        modelTypesChoices = ['Finite Element', 'Modal Analysis']
         modelTypesDefaults = self.modelTypes
         modelTypesQuestion = [
             inquirer.Checkbox('modelTypes', message=modelTypesMessage, choices=modelTypesChoices, default=modelTypesDefaults)

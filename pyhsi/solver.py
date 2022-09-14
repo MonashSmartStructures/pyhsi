@@ -1,6 +1,6 @@
 class Solver:
 
-    def __init__(self):
+    def __init__(self, crowd, beam):
         pass
 
     def assembleMCK(self):
@@ -15,6 +15,6 @@ class Solver:
 #     pass
 
 class FeSMDSolver(Solver):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, crowd, beam):
+        super().__init__(crowd, beam)
         lamda = ''
