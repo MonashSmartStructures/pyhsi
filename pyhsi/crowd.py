@@ -15,14 +15,14 @@ class Pedestrian:
     synchedPace = 0
     synchedPhase = 0
 
-    def __init__(self, pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync):
-        self.pMass = pMass
-        self.pDamp = pDamp
-        self.pStiff = pStiff
-        self.pPace = pPace
-        self.pPhase = pPhase
-        self.pLoc = pLoc
-        self.pVel = pVel
+    def __init__(self, mass, damp, stiff, pace, phase, location, velocity, iSync):
+        self.mass = mass
+        self.damp = damp
+        self.stiff = stiff
+        self.pace = pace
+        self.phase = phase
+        self.location = location
+        self.velocity = velocity
         self.iSync = iSync
 
     @classmethod
@@ -31,8 +31,8 @@ class Pedestrian:
 
     @classmethod
     def setPaceAndPhase(cls, pace, phase):
-        cls.pace = pace
-        cls.phase = phase
+        cls.synchedPace = pace
+        cls.synchedPhase = phase
 
     @classmethod
     def deterministicPedestrian(cls, location, synched=0):
@@ -40,7 +40,7 @@ class Pedestrian:
         pMass = hp['meanMass']
         pDamp = hp['meanDamping']*2*math.sqrt(cls.detK*hp['meanMass'])
         pStiff = cls.detK
-        pLoc = location
+        pLocation = location
 
         if synched == 1:
             iSync = 1
@@ -51,9 +51,9 @@ class Pedestrian:
             pPace = np.random.normal(hp['meanPace'], hp['sdPace'])
             pPhase = (2 * math.pi) * np.random.rand()
 
-        pVel = cls.detVelocity
+        pVelocity = cls.detVelocity
 
-        return cls(pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync)
+        return cls(pMass, pDamp, pStiff, pPace, pPhase, pLocation, pVelocity, iSync)
 
     @classmethod
     def randomPedestrian(cls, location, synched=0):
@@ -61,7 +61,7 @@ class Pedestrian:
         pMass = np.random.lognormal(mean=cls.meanLognormalModel, sigma=cls.sdLognormalModel)
         pDamp = np.random.normal(loc=hp['meanDamping'], scale=hp['sdDamping'])
         pStiff = np.random.normal(loc=hp['meanStiffness'], scale=hp['sdStiffness'])
-        pLoc = location
+        pLocation = location
 
         if synched == 1:
             iSync = 1
@@ -73,9 +73,44 @@ class Pedestrian:
             pPhase = (2 * math.pi) * np.random.rand()
 
         pStride = np.random.normal(hp['meanStride'], hp['sdStride'])
-        pVel = np.multiply(pPace, pStride)
+        pVelocity = np.multiply(pPace, pStride)
 
-        return cls(pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync)
+        return cls(pMass, pDamp, pStiff, pPace, pPhase, pLocation, pVelocity, iSync)
+
+    # region Solver Methods
+    def calcTimeOff(self, length):
+        timeOff = (-self.location+length) / self.velocity
+        return timeOff
+
+    def calcPedForce(self, t):
+        # Question: What are all the commented out parts in matlab ped_force
+        g = 9.81
+
+        W = self.mass * g
+        x = self.location + self.velocity * t  # Position of Pedestrian at each time t
+
+        # Young
+        eta = np.array([0.41 * (self.pPace - 0.95), 0.069 + 0.0056 * self.pPace, 0.033 + 0.0064 * self.pPace, 0.013 + 0.0065 * self.pPace])
+        phi = [0] * 4
+
+        # Now assemble final force, and include weight
+        N = len(eta)  # No. of additional terms in harmonic series
+        F0 = W * np.insert(eta, 0, 1)  # Force amplitudes (constant amplitude for 1)
+        beta = 2 * math.pi * self.pPace * np.array([i for i in range(N + 1)])  # Frequencies
+        phi = np.insert(phi, 0, 0) + self.pPhase  # Phases - enforce first phase as zero phase
+        # phi = [0, phi] + pPhase                                     # Phases - enforce first phase as zero phase
+
+        omega = np.array([beta] * len(t))
+        Ft = np.array([[0]] * len(t), dtype='f')
+        for i in range(len(t)):
+            omega[i] *= t[i]
+            omega[i] += phi
+            # Ft[i] *= np.cos(omega[i])   # Could be rounding error here
+            FtRow = F0 * np.cos(omega[i])  # Could be rounding error here
+            Ft[i] += sum(FtRow)
+
+        return x, Ft
+    # endregion
 
 
 class Crowd:
@@ -101,7 +136,8 @@ class Crowd:
         self.determineCrowdSynchronisation()
 
     def determineCrowdSynchronisation(self):
-        self.iSync = np.random.choice([0, 1], size=self.numPedestrians, p=[1 - self.sync, self.sync])
+        sync = self.sync/100
+        self.iSync = np.random.choice([0, 1], size=self.numPedestrians, p=[1 - sync, sync])
         pace = np.random.normal(loc=self.humanProperties['meanPace'], scale=self.humanProperties['sdPace'])
         phase = (2 * math.pi) * (np.random.rand())
         Pedestrian.setPaceAndPhase(pace, phase)
@@ -120,6 +156,7 @@ class Crowd:
 class SinglePedestrian(Pedestrian):
 
     def __init__(self):
+        # TODO: Where should k come from
         k = 14.11e3
 
         pMass = self.humanProperties['meanMass']
@@ -127,12 +164,12 @@ class SinglePedestrian(Pedestrian):
         pStiff = k
         pPace = 2
         pPhase = 0
-        pLoc = 0
-        pVel = 1.25
+        pLocation = 0
+        pVelocity = 1.25
         iSync = 0
-        super().__init__(pMass, pDamp, pStiff, pPace, pPhase, pLoc, pVel, iSync)
-
-    pass
+        super().__init__(pMass, pDamp, pStiff, pPace, pPhase, pLocation, pVelocity, iSync)
+        self.numPedestrians = 1
+        self.pedestrians = [self]
 
 
 class DeterministicCrowd(Crowd):

@@ -19,6 +19,7 @@ class Beam:
     def __init__(self):
         # Allow any beam properties to be passed at argument?
 
+        self.elemLength = None
         self.I = None
         self.EI = None
         self.nDOF = 0
@@ -38,11 +39,13 @@ class Beam:
         if self.numElements % 2 != 0:
             self.numElements += 1
 
+        self.elemLength = self.length/self.numElements
+
     def testBeamProperties(self):
         return
 
     def beamElement(self):
-        L = self.length/self.numElements
+        L = self.elemLength
 
         # Elemental mass matrix
         elementalMassMatrix = np.array([[156, 22 * L, 54, -13 * L], [22 * L, 4 * L ** 2, 13 * L, -3 * L ** 2],
@@ -58,3 +61,18 @@ class Beam:
 
         return elementalMassMatrix, elementalStiffnessMatrix
 
+    def onBeam(self, x):
+        # Checks if a location is on the beam
+        if 0 <= x <= self.length:
+            return True
+        else:
+            return False
+
+    def locationOnBeam(self, x):
+        # Returns which element x is on and where on that element it is
+        elemNumber = int(np.fix(x / self.elemLength) + 1)
+        elemLocation = (x - (elemNumber - 1) * self.elemLength) / self.elemLength
+        if elemNumber > self.numElements:
+            elemNumber = self.numElements
+            elemLocation = 1.0
+        return elemNumber, elemLocation

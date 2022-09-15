@@ -1,5 +1,6 @@
 from crowd import *
 from fe_mf import *
+from solver import *
 import inquirer
 import csv
 import pprint
@@ -90,9 +91,10 @@ def getRunParameters():
 
 
 def main():
-    sim = SimulationSetup()
-    sim.run()
-    # sim = Simulation.quickLoad('../simulations/sim1.csv')
+    # sim = SimulationSetup()
+    sim = SimulationSetup('../simulations/det1.csv')
+
+    # sim.run()
 
 
 class SimulationSetup:
@@ -106,44 +108,14 @@ class SimulationSetup:
     def __init__(self, filename=None):
         if not filename:
             self.populate()
+            self.next()
         else:
             self.loadSimulation(filename)
-        self.next()
-
-    def __str__(self):
-        # Display the crowd properties in a readable format
-        simRepresentation = '--------------------------------------------------\n'
-        simRepresentation += 'Name: {filename}\n'.format(filename=self.filename)
-        simRepresentation += '--------------------------------------------------\n'
-
-        simRepresentation += '-Beam-\n'
-        for i in self.beamProperties:
-            simRepresentation += '{property}: {value}\n'.format(property=i, value=self.beamProperties[i])
-        simRepresentation += '--------------------------------------------------\n'
-
-        simRepresentation += '-Crowd Options-\n'
-        for i in self.crowdOptions:
-            simRepresentation += '{property}: {value}\n'.format(property=i, value=self.crowdOptions[i])
-        simRepresentation += '--------------------------------------------------\n'
-
-        simRepresentation += '-Human Properties-\n'
-        for i in self.humanProperties:
-            simRepresentation += '{property}: {value}\n'.format(property=i, value=self.humanProperties[i])
-        simRepresentation += '--------------------------------------------------\n'
-
-        simRepresentation += '-Pedestrian Models-\n'
-        for i in self.pedestrianModels:
-            simRepresentation += i + '\n'
-        simRepresentation += '--------------------------------------------------\n'
-
-        simRepresentation += '-Model Types-\n'
-        for i in self.modelTypes:
-            simRepresentation += i + '\n'
-        simRepresentation += '--------------------------------------------------\n'
-
-        return simRepresentation
+            self.run()
 
     def run(self):
+        self.fixAllDataTypes()
+
         # TODO: Do we want to run the simulations from here or pass the object to the solver?
         # Update the human properties of the crowd
         updateHumanProperties(self.humanProperties)
@@ -181,7 +153,7 @@ class SimulationSetup:
             if "Moving Force" in self.pedestrianModels:
                 # FE MF
                 print("Solving system with a 'Finite Element - Moving Force' model")
-                # results = FeMfSolver(crowd, beam)
+                results = FeMfSolver(crowd, beam)
             if "Spring Mass Damper" in self.pedestrianModels:
                 # FE SMD
                 print("Solving system with a 'Finite Element - Spring Mass Damper' model")
@@ -224,9 +196,11 @@ class SimulationSetup:
                 self.editSimulation()
             elif answer['next'] == 'View the simulation properties':
                 print(self)
+                print(repr(self))
             elif answer['next'] == 'Cancel':
                 return
             answer = inquirer.prompt(question)
+        self.run()
 
     def createSimulation(self):
         self.enterBeamProperties()
@@ -575,9 +549,69 @@ class SimulationSetup:
 
     # endregion
 
+    # region Fix Data Types
+    def fixAllDataTypes(self):
+        self.fixBeamPropertiesDataTypes()
+        self.fixCrowdOptionsDataTypes()
+        self.fixHumanPropertiesDataTypes()
+
+    def fixBeamPropertiesDataTypes(self):
+        for i in self.beamProperties:
+            self.beamProperties[i] = float(self.beamProperties[i])
+            if i == 'numElements':
+                self.beamProperties[i] = int(self.beamProperties[i])
+
+    def fixCrowdOptionsDataTypes(self):
+        for i in self.crowdOptions:
+            if i != 'type':
+                self.crowdOptions[i] = float(self.crowdOptions[i])
+                if i == 'numPedestrians':
+                    self.crowdOptions[i] = int(self.crowdOptions[i])
+
+    def fixHumanPropertiesDataTypes(self):
+        for i in self.humanProperties:
+            self.humanProperties[i] = float(self.humanProperties[i])
+    # endregion
+
     @classmethod
     def quickLoad(cls, filename):
         return cls(filename)
+
+    def __repr__(self):
+        return "SimulationSetup('{}')".format(self.filename)
+
+    def __str__(self):
+        # Display the crowd properties in a readable format
+        simRepresentation = '--------------------------------------------------\n'
+        simRepresentation += 'Name: {filename}\n'.format(filename=self.filename[15:])
+        simRepresentation += '--------------------------------------------------\n'
+
+        simRepresentation += '-Beam-\n'
+        for i in self.beamProperties:
+            simRepresentation += '{property}: {value}\n'.format(property=i, value=self.beamProperties[i])
+        simRepresentation += '--------------------------------------------------\n'
+
+        simRepresentation += '-Crowd Options-\n'
+        for i in self.crowdOptions:
+            simRepresentation += '{property}: {value}\n'.format(property=i, value=self.crowdOptions[i])
+        simRepresentation += '--------------------------------------------------\n'
+
+        simRepresentation += '-Human Properties-\n'
+        for i in self.humanProperties:
+            simRepresentation += '{property}: {value}\n'.format(property=i, value=self.humanProperties[i])
+        simRepresentation += '--------------------------------------------------\n'
+
+        simRepresentation += '-Pedestrian Models-\n'
+        for i in self.pedestrianModels:
+            simRepresentation += i + '\n'
+        simRepresentation += '--------------------------------------------------\n'
+
+        simRepresentation += '-Model Types-\n'
+        for i in self.modelTypes:
+            simRepresentation += i + '\n'
+        simRepresentation += '--------------------------------------------------\n'
+
+        return simRepresentation
 
 
 if __name__ == '__main__':

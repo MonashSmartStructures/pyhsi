@@ -18,13 +18,11 @@ def fe_mf(crowd):
     # crowd = TestCrowd(80, 650, 21500, 2.10, math.pi, 0, 1.51, 0)
 
     # run fe_mf_crowd_solve
-    fe_mf_solver = FeMfSolver(crowd, nSteps)
+    fe_mf_solver = FeMfSolver1(crowd, nSteps)
     fe_mf_solver.plotAcceleration()
 
 
-
-
-class FeMfSolver:
+class FeMfSolver1:
     # This may eventually be a general solver for all model types
 
     def __init__(self, crowd, nSteps):
@@ -161,6 +159,7 @@ class FeMfSolver:
         plt.xlim([0, 40])
         plt.show()
 
+
 # TODO: write nonLinearNewMarkBeta
 # ode45 1st order systems
 def newMark(t, M, C, K, F, u0, du0):
@@ -222,8 +221,8 @@ def simTime(crowd, beam, nSteps):
     f = 1 / (2 * math.pi) * (math.pi / beam.length) ** 2 * math.sqrt(beam.EI / beam.linearMass)
     Period = 1 / f
     dTmax = 0.02 * Period
-    pVel = crowd.pVel
-    Toff = (-crowd.pLoc + beam.length) / pVel
+    pVelocity = crowd.velocity
+    Toff = (-crowd.pLocation + beam.length) / pVelocity
     Tend = 1.1 * Toff
     dT = Tend / nSteps
     dT = min(dT, dTmax)
@@ -271,14 +270,14 @@ def pedForce(t, ped):
     # Question: What are all the commented out parts in matlab ped_force
     g = 9.81
 
-    pMass = ped.pMass
-    pPhase = ped.pPhase
-    pPace = ped.pPace
-    pLoc = ped.pLoc
-    pVel = ped.pVel
+    pMass = ped.mass
+    pPhase = ped.phase
+    pPace = ped.pace
+    pLocation = ped.location
+    pVelocity = ped.velocity
 
     W = pMass * g
-    x = pLoc + pVel * t  # Position of Pedestrian at each time t
+    x = pLocation + pVelocity * t  # Position of Pedestrian at each time t
 
     # Young
     eta = np.array([0.41 * (pPace - 0.95), 0.069 + 0.0056 * pPace, 0.033 + 0.0064 * pPace, 0.013 + 0.0065 * pPace])

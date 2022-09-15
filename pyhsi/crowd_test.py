@@ -52,18 +52,18 @@ def testDeterministicCrowd():
 def getPedestrianDistribution(crowds):
 
     # Save arrays of the pedestrian properties
-    pAll = {'pMassAll': [], 'pDampAll': [], 'pStiffAll': [], 'pPaceAll': [], 'pPhaseAll': [], 'pLocAll': [],
-            'pVelAll': [], 'iSyncAll': []}
+    pAll = {'pMassAll': [], 'pDampAll': [], 'pStiffAll': [], 'pPaceAll': [], 'pPhaseAll': [], 'pLocationAll': [],
+            'pVelocityAll': [], 'iSyncAll': []}
 
     for crowd in crowds:
         for ped in crowd.pedestrians:
-            pAll['pMassAll'].append(ped.pMass)
-            pAll['pDampAll'].append(ped.pDamp)
-            pAll['pStiffAll'].append(ped.pStiff)
-            pAll['pPaceAll'].append(ped.pPace)
-            pAll['pPhaseAll'].append(ped.pPhase)
-            pAll['pLocAll'].append(ped.pLoc)
-            pAll['pVelAll'].append(ped.pVel)
+            pAll['pMassAll'].append(ped.mass)
+            pAll['pDampAll'].append(ped.damp)
+            pAll['pStiffAll'].append(ped.stiff)
+            pAll['pPaceAll'].append(ped.pace)
+            pAll['pPhaseAll'].append(ped.phase)
+            pAll['pLocationAll'].append(ped.location)
+            pAll['pVelocityAll'].append(ped.velocity)
             pAll['iSyncAll'].append(ped.iSync)
 
     return pAll
@@ -133,7 +133,7 @@ def plotPedestrianDistribution(pAll, title):
 
     # Location
     ax6 = axis[1, 1]
-    data = pAll['pLocAll']
+    data = pAll['pLocationAll']
     mean = average(data)
     meanString = 'Mean location: {:.2f}'.format(mean)
     ax6.hist(data, bins=nBins, weights=np.ones(len(data)) / len(data))
@@ -142,9 +142,9 @@ def plotPedestrianDistribution(pAll, title):
     ax6.text(0.98, 0.85, meanString, horizontalalignment='right', verticalalignment='center', transform=ax6.transAxes, bbox=props)
     print(meanString)
 
-    # pVelAll
+    # pVelocityAll
     ax7 = axis[2, 1]
-    data = pAll['pVelAll']
+    data = pAll['pVelocityAll']
     mean = average(data)
     meanString = 'Mean velocity: {:.2f}'.format(mean)
     ax7.hist(data, bins=nBins, weights=np.ones(len(data)) / len(data))

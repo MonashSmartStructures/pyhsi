@@ -1,11 +1,16 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+from beam import *
 
 
 def main():
 
-    print((2 * math.pi) * np.random.rand(1))
+    beam = Beam()
+    x = 49
+    if beam.onBeam(x):
+        elemNumber, elemLocation = beam.locationOnBeam(x)
+        print("Element Number: {}\nElement Location: {}".format(elemNumber, elemLocation))
 
 
 main()
