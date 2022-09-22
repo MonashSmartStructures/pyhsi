@@ -1,4 +1,6 @@
 import math
+
+import numpy
 import numpy as np
 
 from matplotlib import pyplot as plt
@@ -8,16 +10,17 @@ from scipy.linalg import eigh
 
 from crowd import *
 from beam import *
-
+''' import the beams from the beam'''
 
 class Solver:
-
+    '''This section of the code creates a solver class'''
     nSteps = 5000
     g = 9.81
     PedestrianModel = None
     ModelType = None
 
     def __init__(self, crowd, beam):
+        ''' function defines the object properties crowd and beam'''
         self.crowd = crowd
         self.beam = beam
 
@@ -42,6 +45,7 @@ class Solver:
         return self.nBDOF + self.crowd.numPedestrians
 
     def genTimeVector(self):
+        ''' this function generates the time vector by simulating the time frame for a given space and stride vector'''
         f = 1/(2*math.pi) * (math.pi/self.beam.length)**2*math.sqrt(self.beam.EI/self.beam.linearMass)
         period = 1/f
         dTMax = 0.02*period     # Stability of newmark
@@ -153,8 +157,95 @@ class Solver:
             self.dq[i:] = du
             self.ddq[i:] = ddu
 
-    def nonLinearNewmarkBeta(self):
+    def nonLinearNewmarkBeta(t, dt, u0, du0, ddu0, F0, func, eigflag):
+        '''This function obtains the matrices M,C,K and F at time t from the function func. It integrates the euquations over time
+         step dt and returns accelerations, velocities and displacements. it passes the current values of these parameters to func.'''
         # TODO: Complete
+        # u = displacement
+        # du = velocity
+        # ddu = acceleration
+        # Ft = force
+        # lamda = ??
+
+        gamma = 1/2
+        beta = 1/4
+        force_tol = 10**0-6
+        max_inc = 20
+
+        #Get current system matrices
+        M, C, K, F = func(t, u0, du0, ddu0)
+        nDOF = len(F)
+        dF = F-F0
+
+        # if eigenvalue output is requested, produce the complex eigenvalues
+        lamda = np.zeros(2*nDOF, 1)
+
+        if nargin < 8 or nargout < 5:
+            #not really sure where this value comes from
+            eigflag = 0
+
+        if eigflag != 0:
+            A1 = np.zeros(nDOF)
+            A2 = np.array(nDOF)
+            A3 = np.linalg.lstsq(-M,K)[0]
+            A4 = np.linalg.lstsq(-M,C)[0]
+            A = [[A1,A2],[A3,A4]]
+            lamda = eig(A)
+            lamda = np.transpose(lamda)
+
+        a0 = 1/(beta*dt^2)
+        a1 = gamma/(beta*dt)
+        a2 = 1/(beta*dt)
+        a3 = gamma/beta
+        a4 = 1/(2*beta)
+        a5 = dt/2*(gamma/beta-2)
+        a6 = dt*(1-gamma/(2*beta))
+
+        Keff = a0*M + a1*C + K
+        #iKeff = numpy.linalg.inv(Keff)
+
+        A = a2*M + a3*C
+        B = a4*M + a5*C
+
+        # Effective force and current displacement step
+        dF_trans = numpy.transpose(dF)
+        duO_trans = numpy.transpose(du0)
+        ddu0_trans = numpy.transpose(ddu0)
+        dFeff = dF_trans + A*duO_trans + B*ddu0_trans
+        delta_u = np.linalg.lstsq(Keff, dFeff)[0]
+
+        #incremental displacement
+        del_u_i = 0
+        not_done = true
+        i_inc = 0
+
+
+        while not_done and i_inc < max_inc:
+            delta_u = delta_u + del_u_i
+            delta_du = a1*delta_u - a3*duO_trans + a6*ddu0_trans
+            delta_ddu = a0*delta_u - a2*duO_trans - a4*ddu0_trans
+
+            del_u_trans = numpy.transpose(delta_u)
+            del_du_trans = numpy.transpose(delta_du)
+            del_ddu_trans = numpy.transpose(delta_ddu)
+
+            u = u0 + del_u_trans
+            du = du0 + del_du_trans
+            ddu = ddu0 + del_ddu_trans
+
+            u_trans = numpy.transpose(u)
+            du_trans = numpy.trans(du)
+            ddu_trans = numpy.transpose(ddu)
+
+
+            Res = F - (M* ddu_trans + C*du_trans +K*u_trans)
+            #residual force
+            Res_trans = numpy.transpose(Res)
+            del_u_i = Keff/Res_trans
+            not_done  = numpy.linalg.norm(Res) > force_tol
+            i_inc = i_inc + 1
+
+
         u = []
         du = []
         ddu = []
