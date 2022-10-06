@@ -1,9 +1,16 @@
+"""
+PyHSI - Crowd Class definition
+"""
+
 import numpy as np
 import math
 import csv
 
 
 class Pedestrian:
+    """
+    Base Class for creating a Pedestrian
+    """
 
     humanProperties = {}
     meanLognormalModel = 4.28  # mM
@@ -16,6 +23,25 @@ class Pedestrian:
     synchedPhase = 0
 
     def __init__(self, mass, damp, stiff, pace, phase, location, velocity, iSync):
+        """
+        this function introduce the properties when creating one pedestrian
+
+        Parameters
+        ----------
+        mass: human mass
+        damp : damping effect of pedesteian
+        stiff : stiffness of humans
+        pace : pacing frequency
+        phase : phase angle
+        location : location of mass
+        velocity : velocity of travelling mass
+        iSync : synchronization
+
+        Returns
+        -------
+        None.
+
+        """
         self.mass = mass
         self.damp = damp
         self.stiff = stiff
@@ -27,15 +53,57 @@ class Pedestrian:
 
     @classmethod
     def setHumanProperties(cls, humanProperties):
+        """
+        class method function is used for future user to be able to access and modify the class state
+
+        Parameters
+        ---------
+
+
+        Returns
+        ------
+        """
         cls.humanProperties = humanProperties
 
     @classmethod
     def setPaceAndPhase(cls, pace, phase):
+        """
+        class method function is used for future user to be able to access and modify the class state
+
+        Parameters
+        ---------
+
+
+        Returns
+        ------
+        """
         cls.synchedPace = pace
         cls.synchedPhase = phase
 
     @classmethod
     def deterministicPedestrian(cls, location, synched=0):
+        """
+        class method function is used for future user to be able to access and modify the class state
+
+        Parameters
+        ---------
+
+
+        Returns
+        ------
+        pMass
+            Stores mass into dictionary hp
+        pDamp
+            Stores damping into
+        pStiff
+        pPace
+        pPhase
+        pLocation
+        pStiffness
+        pVelocity
+        iSync
+
+        """
         hp = cls.humanProperties
         pMass = hp['meanMass']
         pDamp = hp['meanDamping']*2*math.sqrt(cls.detK*hp['meanMass'])
@@ -57,6 +125,16 @@ class Pedestrian:
 
     @classmethod
     def randomPedestrian(cls, location, synched=0):
+        """
+        class method function is used for future user to be able to access and modify the class state
+
+        Parameters
+        ---------
+
+
+        Returns
+        ------
+        """
         hp = cls.humanProperties
         pMass = np.random.lognormal(mean=cls.meanLognormalModel, sigma=cls.sdLognormalModel)
         pDamp = np.random.normal(loc=hp['meanDamping'], scale=hp['sdDamping'])
@@ -79,6 +157,15 @@ class Pedestrian:
 
     # region Solver Methods
     def calcTimeOff(self, length):
+        """
+        returns the departure time of the pedestrian on the bridge
+
+        Returns
+        -------
+        timeOff
+            Departure time of pedestrian on the bridge
+
+        """
         timeOff = (-self.location+length) / self.velocity
         return timeOff
 
@@ -112,8 +199,15 @@ class Pedestrian:
 class Crowd:
 
     humanProperties = {}
+    """
+    an empty dictionary is initialized to store human properties which will be introduced in the following 
+    lines of code.  
+    """
 
     def __init__(self, numPedestrians, length, width, sync):
+        """
+        initialization takes arguments numPedestrians, length, width and sync. Then set the corresponding attributes
+        """
         # self.density = density
         self.numPedestrians = numPedestrians
         self.length = length
@@ -146,6 +240,10 @@ class Crowd:
 
     @classmethod
     def setHumanProperties(cls, humanProperties):
+        """
+        classmethod function is used so users can set their own human properties
+        and store it in the dictionary
+        """
         cls.humanProperties = humanProperties
 
     @classmethod
@@ -158,8 +256,19 @@ class Crowd:
 
 
 class SinglePedestrian(Pedestrian):
-
+    """
+    Sub Class of Pedestrian
+    """
     def __init__(self):
+        """
+        super().__init__(parameters)
+            inherits the parameters from the Base class Pedestrian.
+
+        reintroduce the parameters from Pedestrian Class which overrides the ones set under the parent class
+
+        introduce two other Parameters
+        numPedestrians
+        """
         # TODO: Where should k come from
         k = 14.11e3
 
@@ -173,7 +282,7 @@ class SinglePedestrian(Pedestrian):
         iSync = 0
         super().__init__(pMass, pDamp, pStiff, pPace, pPhase, pLocation, pVelocity, iSync)
         self.numPedestrians = 1
-        self.pedestrians = [self]
+        self.pedestrians = [self] #???
 
     @classmethod
     def fromDict(cls, crowdOptions):

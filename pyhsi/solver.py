@@ -29,6 +29,17 @@ class Solver:
     def __init__(self, crowd, beam, filename=None):
         """
         Initializes the Solver class
+
+        Parameters
+        ----------
+        crowd
+        beam
+
+
+        Return
+        ------
+        None.
+
         """
         self.crowd = crowd
         self.beam = beam
