@@ -1,6 +1,9 @@
+import sys
+
 from crowd import *
 from fe_mf import *
 from solver import *
+from results import *
 import inquirer
 import csv
 import pprint
@@ -8,91 +11,35 @@ import tkinter as tk
 from tkinter import filedialog
 
 
-def main1():
-    runParameters = getRunParameters()
-    print(runParameters)
-
-    humanProperties = getHumanProperties()
-    updateHumanProperties(humanProperties)
-
-    # Crowd parameters
-    density = 2
-    length = 50
-    width = 1
-    sync = 0
-
-    # crowd = SinglePedestrian()
-    # crowd = DeterministicCrowd(density, length, width, sync)
-    # crowd = RandomCrowd(density, length, width, sync)
-
-    m = 73.85
-    k = 14.11e3
-    xi = 0.3
-    crowd = SinglePedestrian()
-
-    fe_mf(crowd)
-
-
-def runHSI():
-    print('running hsi')
-
-
-def getRunParameters():
-    # Bridge Type
-    # Bridge properties:
-    #   - Number of beam elements
-    #   - Length (m)
-    #   - Width (m)
-    #   - Height (m)
-    #   - Young's Modulus (N/m^2)
-    #   - Model damping ratio
-    #   - Higher mode for damping matrix
-    #   - Cross sectional area (m^2)
-    #   - Linear Mass (kg/m)
-    #   - Beam frequency (Hz)
-
-    # Crowd type
-    # Crowd properties:
-    #   - Number of people
-    #   - Length of crowd
-    #   - Width of crowd
-    #   - Percent synchronised
-
-    # Human Properties
-    # Pedestrian Model
-
-    crowdTypeChoices = ['Single Pedestrian', 'Deterministic Crowd', 'Single Random Crowd', '100 Random Crowds']
-    acceptDefaultChoices = ['Yes', 'No']
-    pedestrianModelChoices = ['Moving Mass', 'Spring Mass Damper', 'Moving Force']
-    modelTypeChoices = ['Modal Analysis', 'Finite Element']
-
-    questions = [
-        inquirer.List('crowdType',
-                      message="Which crowd type would you like?",
-                      choices=crowdTypeChoices,
-                      ),
-        inquirer.List('acceptDefault',
-                      message="Accept default human properties?",
-                      choices=acceptDefaultChoices,
-                      ),
-        inquirer.Checkbox('pedestrianModel',
-                          message='Which pedestrian model(s) would you like to use?',
-                          choices=pedestrianModelChoices,
-                          ),
-        inquirer.Checkbox('modelType',
-                          message='Which model type(s) would you like to use?',
-                          choices=modelTypeChoices,
-                          ),
-    ]
-
-    runParameters = inquirer.prompt(questions)
-
-    return runParameters
-
-
 def main():
+    # Run a simulation or load results
+    # # Get the simulation properties
+    # choices = ['Run a simulation', 'Load results']
+    # question = [inquirer.List('simSource', message="How would you like to start?", choices=choices)]
+    # answer = inquirer.prompt(question)
+    #
+    # if answer['simSource'] == "Create a new simulation":
+    #     self.createSimulation()
+    # elif answer['simSource'] == "Load simulation":
+    #     self.loadSimulation()
+
+    # Setup Simulation
     # sim = SimulationSetup()
-    sim = SimulationSetup('../simulations/det1.csv')
+    sim = SimulationSetup('../simulations/simple.csv')  # Quick run
+    solvers = sim.loadSolvers()
+
+    # Run Simulations
+    results = {}
+    for i in solvers:
+        solvers[i].solve()
+        t, q, dq, ddq = solvers[i].getResults()
+        pedModel, modelType = solvers[i].getModelType()
+        results[i] = Results(t, q, dq, ddq, pedModel, modelType, sim.filename)
+        results[i].save()
+        results[i].options()
+
+    # Process Results
+    # results['FE_MM'].calcMaxRms()
 
     # sim.run()
 
@@ -111,69 +58,81 @@ class SimulationSetup:
             self.next()
         else:
             self.loadSimulation(filename)
-            self.run()
 
-    def run(self):
+    def createSimulation(self):
+        self.enterBeamProperties()
+        self.enterCrowdOptions()
+        self.enterHumanProperties()
+        self.enterPedestrianModels()
+        self.enterModelTypes()
+
+        # Output properties?
+
+        saveMessage = 'Would you like to save this simulation configuration?'
+        saveChoices = ["Save as", "Don't save", "Edit simulation configuration"]
+        saveQuestion = [inquirer.List('save', message=saveMessage, choices=saveChoices)]
+        saveAnswer = inquirer.prompt(saveQuestion)
+
+        if saveAnswer['save'] == "Save as":
+            self.saveSimulation()
+        elif saveAnswer['save'] == "Edit simulation configuration":
+            self.editSimulation()
+
+    def loadSolvers(self):
         self.fixAllDataTypes()
 
-        # TODO: Do we want to run the simulations from here or pass the object to the solver?
         # Update the human properties of the crowd
         updateHumanProperties(self.humanProperties)
 
         # Generate the beam
         # TODO: Add beam properties to the beam
-        beam = Beam()
+        beam = Beam.fromDict(self.beamProperties)
 
         # Generate the crowd
-        crowdType = self.crowdOptions['type']
-        if crowdType == "Single Pedestrian":
-            crowd = SinglePedestrian()
-        elif crowdType == "Deterministic Crowd":
-            crowd = DeterministicCrowd(
-                self.crowdOptions['numPedestrians'],
-                self.crowdOptions['crowdLength'],
-                self.crowdOptions['crowdWidth'],
-                self.crowdOptions['percentSynchronised'])
-        elif crowdType == "Random Crowd":
-            crowd = RandomCrowd(
-                self.crowdOptions['numPedestrians'],
-                self.crowdOptions['crowdLength'],
-                self.crowdOptions['crowdWidth'],
-                self.crowdOptions['percentSynchronised'])
-        elif crowdType == "n Random Crowds":
-            # TODO: Implement n Random Crowds
-            print("Not implemented")
+        crowd = self.getCrowdClass().fromDict(self.crowdOptions)
 
+        solvers = {}
         # Run the simulation for each model combination
         if "Finite Element" in self.modelTypes:
             if "Moving Mass" in self.pedestrianModels:
                 # FE MM
-                print("Solving system with a 'Finite Element - Moving Mass' model")
-                # results = FeMMSolver(crowd, beam)
+                solvers['FE_MM'] = FeMmSolver(crowd, beam)
             if "Moving Force" in self.pedestrianModels:
                 # FE MF
-                print("Solving system with a 'Finite Element - Moving Force' model")
-                results = FeMfSolver(crowd, beam)
+                solvers['FE_MF'] = FeMfSolver(crowd, beam)
             if "Spring Mass Damper" in self.pedestrianModels:
                 # FE SMD
-                print("Solving system with a 'Finite Element - Spring Mass Damper' model")
-                # results = FeSMDSolver(crowd, beam)
+                solvers['FE_SMD'] = FeSMDSolver(crowd, beam)
         if "Modal Analysis" in self.modelTypes:
             if "Moving Mass" in self.pedestrianModels:
                 # MO MM
-                print("Solving system with a 'Modal Analysis - Moving Mass' model")
-                # results = MoMMSolver(crowd, beam)
+                solvers['MO_MM'] = MoMmSolver(crowd, beam)
             if "Moving Force" in self.pedestrianModels:
                 # MO MF
-                print("Solving system with a 'Modal Analysis - Moving Force' model")
-                # results = MoMfSolver(crowd, beam)
+                solvers['MO_MF'] = MoMfSolver(crowd, beam)
             if "Spring Mass Damper" in self.pedestrianModels:
                 # MO SMD
-                print("Solving system with a 'Modal Analysis - Sprint Mass Damper' model")
-                # results = MoSMDSolver(crowd, beam)
+                solvers['MO_SMD'] = MoSMDSolver(crowd, beam)
 
         # TODO: Determine how to present results
+        return solvers
 
+    def getCrowdClass(self):
+        # Generate the crowd
+        crowdType = self.crowdOptions['type']
+        if crowdType == "Single Pedestrian":
+            return SinglePedestrian
+        elif crowdType == "Deterministic Crowd":
+            return DeterministicCrowd
+        elif crowdType == "Random Crowd":
+            return RandomCrowd
+        elif crowdType == "n Random Crowds":
+            # TODO: Implement n Random Crowds
+            print("Not implemented")
+        else:
+            sys.exit("Invalid crowd")
+
+    # region Navigate class
     def populate(self):
         # Get the simulation properties
         choices = ['Create a new simulation', 'Load simulation']
@@ -198,29 +157,11 @@ class SimulationSetup:
                 print(self)
                 print(repr(self))
             elif answer['next'] == 'Cancel':
-                return
+                sys.exit()
             answer = inquirer.prompt(question)
-        self.run()
+    # endregion
 
-    def createSimulation(self):
-        self.enterBeamProperties()
-        self.enterCrowdOptions()
-        self.enterHumanProperties()
-        self.enterPedestrianModels()
-        self.enterModelTypes()
-
-        # Output properties?
-
-        saveMessage = 'Would you like to save this simulation configuration?'
-        saveChoices = ["Save as", "Don't save", "Edit simulation configuration"]
-        saveQuestion = [inquirer.List('save', message=saveMessage, choices=saveChoices)]
-        saveAnswer = inquirer.prompt(saveQuestion)
-
-        if saveAnswer['save'] == "Save as":
-            self.saveSimulation()
-        elif saveAnswer['save'] == "Edit simulation configuration":
-            self.editSimulation()
-
+    # region Load Save and Edit
     def saveSimulation(self):
         path = ''
         if self.filename != '':
@@ -230,7 +171,10 @@ class SimulationSetup:
             filenameMessage = "Enter a filename"
             filenameQuestion = [inquirer.Text('filename', message=filenameMessage)]
             filenameAnswer = inquirer.prompt(filenameQuestion)
-            path = '../simulations/{filename}.csv'.format(filename=filenameAnswer['filename'])
+            path = f"../simulations/{filenameAnswer['filename']}"
+            if not path[-4:] == '.csv':
+                path += '.csv'
+
             # TODO: Check if file already exists
             self.filename = path
 
@@ -275,12 +219,12 @@ class SimulationSetup:
             filenameMessage = "Enter the filename"
             filenameQuestion = [inquirer.Text('filename', message=filenameMessage)]
             filenameAnswer = inquirer.prompt(filenameQuestion)
-            filename = '../simulations/{filename}'.format(filename=filenameAnswer['filename'])
+            filename = f"../simulations/{filenameAnswer['filename']}"
             if not filename[-4:] == '.csv':
                 filename += '.csv'
 
         # TODO: Check if the file exists
-        print('Loading simulation from: {filename}'.format(filename=filename))
+        print(f"Loading simulation from: {filename}")
         self.filename = filename
 
         # Read from the file
@@ -290,7 +234,7 @@ class SimulationSetup:
             # beamProperties
             prop = ''
             for row in csvReader:
-                if not row:
+                if not row or row == ['', '']:
                     prop = ''
                     continue
 
@@ -345,6 +289,7 @@ class SimulationSetup:
             self.saveSimulation()
         elif saveAnswer['save'] == "Edit simulation configuration":
             self.editSimulation()
+    # endregion
 
     # region Enter properties
     def enterBeamProperties(self):
@@ -520,7 +465,7 @@ class SimulationSetup:
     # region Load from default
     @staticmethod
     def loadDefaultQuestion(name):
-        loadDefaultMessage = 'Would you like to load the default {name}?'.format(name=name)
+        loadDefaultMessage = f"Would you like to load the default {name}?"
         loadDefaultChoices = ['Yes', 'No']
         loadDefaultQuestion = [inquirer.List('loadDefault', message=loadDefaultMessage, choices=loadDefaultChoices)]
         loadDefaultAnswer = inquirer.prompt(loadDefaultQuestion)
@@ -558,7 +503,7 @@ class SimulationSetup:
     def fixBeamPropertiesDataTypes(self):
         for i in self.beamProperties:
             self.beamProperties[i] = float(self.beamProperties[i])
-            if i == 'numElements':
+            if i == 'numElements' or i == 'nHigh':
                 self.beamProperties[i] = int(self.beamProperties[i])
 
     def fixCrowdOptionsDataTypes(self):
@@ -573,32 +518,29 @@ class SimulationSetup:
             self.humanProperties[i] = float(self.humanProperties[i])
     # endregion
 
-    @classmethod
-    def quickLoad(cls, filename):
-        return cls(filename)
-
+    # region Other Dunder Methods
     def __repr__(self):
-        return "SimulationSetup('{}')".format(self.filename)
+        return f"SimulationSetup('{self.filename}')"
 
     def __str__(self):
         # Display the crowd properties in a readable format
         simRepresentation = '--------------------------------------------------\n'
-        simRepresentation += 'Name: {filename}\n'.format(filename=self.filename[15:])
+        simRepresentation += f"Name: {self.filename[15:]}\n"
         simRepresentation += '--------------------------------------------------\n'
 
         simRepresentation += '-Beam-\n'
         for i in self.beamProperties:
-            simRepresentation += '{property}: {value}\n'.format(property=i, value=self.beamProperties[i])
+            simRepresentation += f"{i}: {self.beamProperties[i]}\n"
         simRepresentation += '--------------------------------------------------\n'
 
         simRepresentation += '-Crowd Options-\n'
         for i in self.crowdOptions:
-            simRepresentation += '{property}: {value}\n'.format(property=i, value=self.crowdOptions[i])
+            simRepresentation += f"{i}: {self.crowdOptions[i]}\n"
         simRepresentation += '--------------------------------------------------\n'
 
         simRepresentation += '-Human Properties-\n'
         for i in self.humanProperties:
-            simRepresentation += '{property}: {value}\n'.format(property=i, value=self.humanProperties[i])
+            simRepresentation += f"{i}: {self.humanProperties[i]}\n"
         simRepresentation += '--------------------------------------------------\n'
 
         simRepresentation += '-Pedestrian Models-\n'
@@ -612,6 +554,7 @@ class SimulationSetup:
         simRepresentation += '--------------------------------------------------\n'
 
         return simRepresentation
+    # endregion
 
 
 if __name__ == '__main__':

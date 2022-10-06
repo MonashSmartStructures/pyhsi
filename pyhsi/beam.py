@@ -4,7 +4,7 @@ import numpy as np
 
 class Beam:
     # Class attributes
-    numElements = 10  # n - Number of beam elements
+    _numElements = 10  # n - Number of beam elements !not for modal
     length = 50  # L - Length (m)
     width = 2  # b - Width (m)
     height = 0.6  # h - Height (m)
@@ -16,33 +16,75 @@ class Beam:
 
     beamFreq = 2  # f - Beam frequency, given linear mass (Hz)
 
-    def __init__(self):
-        # Allow any beam properties to be passed at argument?
+    def __init__(self, numElements, length, width, height, E, modalDampingRatio, nHigh, area, linearMass):
 
-        self.elemLength = None
-        self.I = None
-        self.EI = None
-        self.nDOF = 0
-        self.nBDOF = 0
-        self.RDOF = 0
+        self._numElements = numElements
+        self.length = length
+        self.width = width
+        self.height = height
+        self.E = E
+        self.modalDampingRatio = modalDampingRatio
+        self.nHigh = nHigh
+        self.area = area
+        self.linearMass = linearMass
 
-        self.calcBeamProperties()
+        self._elemLength = None
+        self._I = None
+        self._EI = None
+        self._nDOF = None
+        self._nBDOF = None
+        self._RDOF = None
 
-    def calcBeamProperties(self):
-        self.I = (self.width * self.height ** 3) / 12  # I - Second Moment of Area (m^4)
-        self.EI = self.linearMass * (
-                    (2 * math.pi * self.beamFreq) * (math.pi / self.length) ** (-2)) ** 2  # EI - Flexural Rigidity
-        self.nDOF = 2 * (self.numElements + 1)
-        self.nBDOF = 2 * (self.numElements + 1)
-        self.RDOF = [0, self.nDOF - 2]  # Should this be nDOF-1 so that the last column is used not 2nd last?
+    # region Properties
+    @property
+    def elemLength(self):
+        if self._elemLength is None:
+            self._elemLength = self.length / self.numElements
+        return self._elemLength
 
-        if self.numElements % 2 != 0:
-            self.numElements += 1
+    @property
+    def I(self):
+        # I - Second Moment of Area (m^4)
+        if self._I is None:
+            self._I = (self.width * self.height ** 3) / 12
+        return self._I
 
-        self.elemLength = self.length/self.numElements
+    @property
+    def EI(self):
+        # EI - Flexural Rigidity
+        if self._EI is None:
+            self._EI = self.linearMass * ((2 * math.pi * self.beamFreq) * (math.pi / self.length) ** (-2)) ** 2
+        return self._EI
 
-    def testBeamProperties(self):
-        return
+    @property
+    def nDOF(self):
+        if self._nDOF is None:
+            self._nDOF = 2 * (self.numElements + 1)
+        return self._nDOF
+
+    @property
+    def nBDOF(self):
+        if self._nBDOF is None:
+            self._nBDOF = 2 * (self.numElements + 1)
+        return self._nBDOF
+
+    @property
+    def RDOF(self):
+        if self._RDOF is None:
+            self._RDOF = [0, self.nDOF - 2]  # Should this be nDOF-1 so that the last column is used not 2nd last?
+        return self._RDOF
+
+    @property
+    def numElements(self):
+        return self._numElements
+
+    @numElements.setter
+    def numElements(self, numElements):
+        if numElements % 2 != 0:
+            numElements += 1
+        self._numElements = numElements
+        self._elemLength = None
+    # endregion
 
     def beamElement(self):
         L = self.elemLength
@@ -51,13 +93,13 @@ class Beam:
         elementalMassMatrix = np.array([[156, 22 * L, 54, -13 * L], [22 * L, 4 * L ** 2, 13 * L, -3 * L ** 2],
                                         [54, 13 * L, 156, -22 * L], [-13 * L, -3 * L ** 2, -22 * L, 4 * L ** 2]],
                                        dtype='f')
-        elementalMassMatrix *= (self.linearMass*L/420)
+        elementalMassMatrix *= (self.linearMass * L / 420)
 
         # Elemental stiffness matrix
         elementalStiffnessMatrix = np.array([[12, 6 * L, -12, 6 * L], [6 * L, 4 * L ** 2, -6 * L, 2 * L ** 2],
                                              [-12, -6 * L, 12, -6 * L], [6 * L, 2 * L ** 2, -6 * L, 4 * L ** 2]],
                                             dtype='f')
-        elementalStiffnessMatrix *= (self.EI/L**3)
+        elementalStiffnessMatrix *= (self.EI / L ** 3)
 
         return elementalMassMatrix, elementalStiffnessMatrix
 
@@ -76,3 +118,35 @@ class Beam:
             elemNumber = self.numElements
             elemLocation = 1.0
         return elemNumber, elemLocation
+
+    @classmethod
+    def fromDict(cls, beamProperties):
+        numElements = beamProperties['numElements']
+        length = beamProperties['length']
+        width = beamProperties['width']
+        height = beamProperties['height']
+        E = beamProperties['E']
+        modalDampingRatio = beamProperties['modalDampingRatio']
+        nHigh = beamProperties['nHigh']
+        area = beamProperties['area']
+        linearMass = beamProperties['linearMass']
+
+        return cls(numElements, length, width, height, E, modalDampingRatio, nHigh, area, linearMass)
+
+
+class FeBeam(Beam):
+    pass
+
+
+class MoBeam(Beam):
+    pass
+
+# numElements
+# length
+# width
+# height
+# E
+# modalDampingRatio
+# nHigh
+# area
+# linearMass

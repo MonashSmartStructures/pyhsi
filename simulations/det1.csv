@@ -1,0 +1,36 @@
+Beam
+numElements,10.0
+length,50.0
+width,2.0
+height,0.6
+E,200000000000.0
+modalDampingRatio,0.005
+nHigh,3.0
+area,0.3162
+linearMass,500.0
+beamFreq,2.0
+
+Crowd
+type,Deterministic Crowd
+numPedestrians,100.0
+crowdLength,50.0
+crowdWidth,1.0
+percentSynchronised,0.0
+
+Human Properties
+meanMass,73.85
+sdMass,15.68
+meanPace,1.96
+sdPace,0.209
+meanStride,0.66
+sdStride,0.066
+meanStiffness,28000.0
+sdStiffness,2800.0
+meanDamping,0.3
+sdDamping,0.03
+
+Pedestrian Models
+Moving Mass
+
+Model Types
+Finite Element

@@ -90,24 +90,20 @@ class Pedestrian:
         x = self.location + self.velocity * t  # Position of Pedestrian at each time t
 
         # Young
-        eta = np.array([0.41 * (self.pPace - 0.95), 0.069 + 0.0056 * self.pPace, 0.033 + 0.0064 * self.pPace, 0.013 + 0.0065 * self.pPace])
-        phi = [0] * 4
+        eta = np.array([0.41 * (self.pace - 0.95),
+                        0.069 + 0.0056 * self.pace,
+                        0.033 + 0.0064 * self.pace,
+                        0.013 + 0.0065 * self.pace])
+        phi = np.zeros(4)
 
         # Now assemble final force, and include weight
         N = len(eta)  # No. of additional terms in harmonic series
         F0 = W * np.insert(eta, 0, 1)  # Force amplitudes (constant amplitude for 1)
-        beta = 2 * math.pi * self.pPace * np.array([i for i in range(N + 1)])  # Frequencies
-        phi = np.insert(phi, 0, 0) + self.pPhase  # Phases - enforce first phase as zero phase
-        # phi = [0, phi] + pPhase                                     # Phases - enforce first phase as zero phase
+        beta = 2 * math.pi * self.pace * np.array([i for i in range(N + 1)])  # Frequencies
+        phi = np.insert(phi, 0, 0) + self.phase  # Phases - enforce first phase as zero phase
 
-        omega = np.array([beta] * len(t))
-        Ft = np.array([[0]] * len(t), dtype='f')
-        for i in range(len(t)):
-            omega[i] *= t[i]
-            omega[i] += phi
-            # Ft[i] *= np.cos(omega[i])   # Could be rounding error here
-            FtRow = F0 * np.cos(omega[i])  # Could be rounding error here
-            Ft[i] += sum(FtRow)
+        omega = beta * t + phi
+        Ft = sum(F0 * np.cos(omega))
 
         return x, Ft
     # endregion
@@ -152,6 +148,14 @@ class Crowd:
     def setHumanProperties(cls, humanProperties):
         cls.humanProperties = humanProperties
 
+    @classmethod
+    def fromDict(cls, crowdOptions):
+        numPedestrians = crowdOptions['numPedestrians']
+        length = crowdOptions['crowdLength']
+        width = crowdOptions['crowdWidth']
+        sync = crowdOptions['percentSynchronised']
+        return cls(numPedestrians, length, width, sync)
+
 
 class SinglePedestrian(Pedestrian):
 
@@ -171,13 +175,17 @@ class SinglePedestrian(Pedestrian):
         self.numPedestrians = 1
         self.pedestrians = [self]
 
+    @classmethod
+    def fromDict(cls, crowdOptions):
+        return cls()
+
 
 class DeterministicCrowd(Crowd):
 
     arrivalGap = 1      # HSI Paper Section 5.4
 
-    def __init__(self, density, length, width, sync):
-        super().__init__(density, length, width, sync)
+    def __init__(self, numPedestrians, length, width, sync):
+        super().__init__(numPedestrians, length, width, sync)
         self.generateLocations()
         self.populateCrowd()
 
@@ -188,10 +196,14 @@ class DeterministicCrowd(Crowd):
         for i in range(self.numPedestrians):
             self.addDeterministicPedestrian(self.locations[i], self.iSync[i])
 
+    @classmethod
+    def setArrivalGap(cls, arrivalGap):
+        cls.arrivalGap = arrivalGap
+
 
 class RandomCrowd(Crowd):
-    def __init__(self, density, length, width, sync):
-        super().__init__(density, length, width, sync)
+    def __init__(self, numPedestrians, length, width, sync):
+        super().__init__(numPedestrians, length, width, sync)
         self.generateLocations()
         self.populateCrowd()
 
@@ -207,14 +219,10 @@ class RandomCrowd(Crowd):
 def getHumanProperties():
     humanProperties = {}
 
-    with open('../pyhsi/HumanProperties.csv', newline='') as csvFile:
+    with open('../simulations/defaults/DefaultHumanProperties.csv', newline='') as csvFile:
         csvReader = csv.reader(csvFile, delimiter=',')
-        lineCount = 0
         for row in csvReader:
-            if lineCount > 0:
-                humanProperties['mean' + row[0]] = float(row[1])
-                humanProperties['sd' + row[0]] = float(row[2])
-            lineCount += 1
+            humanProperties[row[0]] = float(row[1])
 
     return humanProperties
 

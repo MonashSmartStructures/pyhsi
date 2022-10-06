@@ -80,7 +80,7 @@ def plotPedestrianDistribution(pAll, title):
     ax1 = axis[0, 0]
     data = pAll['pMassAll']
     mean = average(data)
-    meanString = 'Mean mass: {:.2f}'.format(mean)
+    meanString = f'Mean mass: {mean:.2f}'
     ax1.hist(data, bins=nBins, weights=np.ones(len(data)) / len(data))
     ax1.set_title("Mass Distribution")
     ax1.axvline(mean, color='k', linestyle='dashed', linewidth=1)
@@ -91,7 +91,7 @@ def plotPedestrianDistribution(pAll, title):
     ax2 = axis[1, 0]
     data = pAll['pDampAll']
     mean = average(data)
-    meanString = 'Mean damping: {:.2f}'.format(mean)
+    meanString = f'Mean damping: {mean:.2f}'
     ax2.hist(data, bins=nBins, weights=np.ones(len(data)) / len(data))
     ax2.set_title("Damping Distribution")
     ax2.axvline(mean, color='k', linestyle='dashed', linewidth=1)
@@ -102,7 +102,7 @@ def plotPedestrianDistribution(pAll, title):
     ax3 = axis[2, 0]
     data = pAll['pStiffAll']
     mean = average(data)
-    meanString = 'Mean stiffness: {:.2f}'.format(mean)
+    meanString = f'Mean stiffness: {mean:.2f}'
     ax3.hist(data, bins=nBins, weights=np.ones(len(data)) / len(data))
     ax3.set_title("Stiffness Distribution")
     ax3.axvline(mean, color='k', linestyle='dashed', linewidth=1)
@@ -113,7 +113,7 @@ def plotPedestrianDistribution(pAll, title):
     ax4 = axis[3, 0]
     data = pAll['pPaceAll']
     mean = average(data)
-    meanString = 'Mean pace: {:.2f}'.format(mean)
+    meanString = f'Mean pace: {mean:.2f}'
     ax4.hist(data, bins=nBins, weights=np.ones(len(data)) / len(data))
     ax4.set_title("Pace Distribution")
     ax4.axvline(mean, color='k', linestyle='dashed', linewidth=1)
@@ -124,7 +124,7 @@ def plotPedestrianDistribution(pAll, title):
     ax5 = axis[0, 1]
     data = pAll['pPhaseAll']
     mean = average(data)
-    meanString = 'Mean phase: {:.2f}'.format(mean)
+    meanString = f'Mean phase: {mean:.2f}'
     ax5.hist(data, bins=nBins, weights=np.ones(len(data)) / len(data))
     ax5.set_title("Phase Distribution")
     ax5.axvline(mean, color='k', linestyle='dashed', linewidth=1)
@@ -135,7 +135,7 @@ def plotPedestrianDistribution(pAll, title):
     ax6 = axis[1, 1]
     data = pAll['pLocationAll']
     mean = average(data)
-    meanString = 'Mean location: {:.2f}'.format(mean)
+    meanString = f'Mean location: {mean:.2f}'
     ax6.hist(data, bins=nBins, weights=np.ones(len(data)) / len(data))
     ax6.set_title("Location Distribution")
     ax6.axvline(mean, color='k', linestyle='dashed', linewidth=1)
@@ -146,7 +146,7 @@ def plotPedestrianDistribution(pAll, title):
     ax7 = axis[2, 1]
     data = pAll['pVelocityAll']
     mean = average(data)
-    meanString = 'Mean velocity: {:.2f}'.format(mean)
+    meanString = f'Mean velocity: {mean:.2f}'
     ax7.hist(data, bins=nBins, weights=np.ones(len(data)) / len(data))
     ax7.set_title("Velocity Distribution")
     ax7.axvline(mean, color='k', linestyle='dashed', linewidth=1)
@@ -156,7 +156,7 @@ def plotPedestrianDistribution(pAll, title):
     # iSyncAll
     ax8 = axis[3, 1]
     data = pAll['iSyncAll']
-    meanString = 'Mean synchronisation: {:.2f}'.format(mean)
+    meanString = f'Mean synchronisation: {mean:.2f}'
     ax8.hist(data, bins=nBins, weights=np.ones(len(data)) / len(data))
     ax8.set_title("Synchronisation Distribution")
     print(meanString)
