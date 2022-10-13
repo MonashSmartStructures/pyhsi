@@ -155,6 +155,23 @@ class Pedestrian:
 
         return cls(pMass, pDamp, pStiff, pPace, pPhase, pLocation, pVelocity, iSync)
 
+    @classmethod
+    def exactPedestrian(cls, location, synched=0):
+        """
+        Temporary, used for testing crowds
+        """
+        hp = cls.humanProperties
+        pMass = hp['meanMass']
+        pDamp = hp['meanDamping'] * 2 * math.sqrt(cls.detK * hp['meanMass'])
+        pStiff = cls.detK
+        pPace = 2
+        pPhase = 0
+        pLocation = location
+        pVelocity = cls.detVelocity
+        iSync = synched
+
+        return cls(pMass, pDamp, pStiff, pPace, pPhase, pLocation, pVelocity, iSync)
+
     # region Solver Methods
     def calcTimeOff(self, length):
         """
@@ -237,6 +254,12 @@ class Crowd:
 
     def addDeterministicPedestrian(self, location, synched):
         self.pedestrians.append(Pedestrian.deterministicPedestrian(location, synched))
+
+    def addExactPedestrian(self, location, synched):
+        """
+        Temporary, for testing
+        """
+        self.pedestrians.append(Pedestrian.exactPedestrian(location, synched))
 
     @classmethod
     def setHumanProperties(cls, humanProperties):
@@ -341,10 +364,23 @@ def updateHumanProperties(humanProperties):
     Crowd.setHumanProperties(humanProperties)
 
 
-# testcrowd = Crowd(0.5,100,2,0.1)
-# testcrowd.generateBodyProperties()
+class ExactCrowd(Crowd):
 
-# testcrowd = testCrowd(80,650,21500,2.10,math.pi,0,1.51,0)
+    arrivalGap = 1      # HSI Paper Section 5.4
 
+    def __init__(self, numPedestrians, length, width, sync):
+        super().__init__(numPedestrians, length, width, sync)
+        self.generateLocations()
+        self.populateCrowd()
 
+    def generateLocations(self):
+        self.locations = -self.arrivalGap*np.array(range(self.numPedestrians))
+
+    def populateCrowd(self):
+        for i in range(self.numPedestrians):
+            self.addExactPedestrian(self.locations[i], self.iSync[i])
+
+    @classmethod
+    def setArrivalGap(cls, arrivalGap):
+        cls.arrivalGap = arrivalGap
 

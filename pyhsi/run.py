@@ -1,13 +1,12 @@
 import sys
 
 from crowd import *
-from fe_mf import *
 from solver import *
 from results import *
 import inquirer
 import csv
-import pprint
-import tkinter as tk
+
+from tkinter import *
 from tkinter import filedialog
 
 
@@ -24,8 +23,8 @@ def main():
     #     self.loadSimulation()
 
     # Setup Simulation
-    # sim = SimulationSetup()
-    sim = SimulationSetup('../simulations/simple.csv')  # Quick run
+    sim = SimulationSetup()
+    # sim = SimulationSetup('../simulations/setups/crowd1.csv')  # Quick run
     solvers = sim.loadSolvers()
 
     # Run Simulations
@@ -35,13 +34,27 @@ def main():
         t, q, dq, ddq = solvers[i].getResults()
         pedModel, modelType = solvers[i].getModelType()
         results[i] = Results(t, q, dq, ddq, pedModel, modelType, sim.filename)
-        results[i].save()
+        results[i].askSave()
         results[i].options()
 
     # Process Results
     # results['FE_MM'].calcMaxRms()
 
     # sim.run()
+
+
+def testRun():
+    Solver.setNumSteps(1)
+
+    # sim = SimulationSetup()
+    sim = SimulationSetup('../simulations/setups/test2.csv')
+    solvers = sim.loadSolvers()
+    solvers['FE_MM'].solve()
+    t, q, dq, ddq = solvers['FE_MM'].getResults()
+    pedModel, modelType = solvers['FE_MM'].getModelType()
+    results = Results(t, q, dq, ddq, pedModel, modelType, sim.filename)
+    results.askSave()
+    results.options()
 
 
 class SimulationSetup:
@@ -126,6 +139,8 @@ class SimulationSetup:
             return DeterministicCrowd
         elif crowdType == "Random Crowd":
             return RandomCrowd
+        elif crowdType == "Exact Crowd":
+            return ExactCrowd
         elif crowdType == "n Random Crowds":
             # TODO: Implement n Random Crowds
             print("Not implemented")
@@ -214,16 +229,21 @@ class SimulationSetup:
 
     def loadSimulation(self, filename=None):
         # Get the file to load the simulation from
-        # TODO: Allow user to select file from file explorer
+        # TODO: Check this works with other OS
         if not filename:
-            filenameMessage = "Enter the filename"
-            filenameQuestion = [inquirer.Text('filename', message=filenameMessage)]
-            filenameAnswer = inquirer.prompt(filenameQuestion)
-            filename = f"../simulations/{filenameAnswer['filename']}"
-            if not filename[-4:] == '.csv':
-                filename += '.csv'
+            root = Tk()
+            root.withdraw()
+            root.call('wm', 'attributes', '.', '-topmost', True)
+            filename = filedialog.askopenfilename(
+                parent=root,
+                title='Select simulation file',
+                filetypes=[("Text Files", ".csv")],
+                initialdir="../simulations/setups")
 
-        # TODO: Check if the file exists
+            if filename == '':
+                print('No file chosen, stopping program.')
+                sys.exit()
+
         print(f"Loading simulation from: {filename}")
         self.filename = filename
 
@@ -338,12 +358,14 @@ class SimulationSetup:
             beamPropertiesAnswers = inquirer.prompt(beamPropertiesQuestions)
 
             for i in beamPropertiesAnswers:
-                self.humanProperties[i] = beamPropertiesAnswers[i]
+                self.beamProperties[i] = beamPropertiesAnswers[i]
+
+        self.fixBeamPropertiesDataTypes()
 
     def enterCrowdOptions(self):
         # Get crowd type
         crowdTypeMessage = 'What type of crowd would you like to simulate?'
-        crowdTypeChoices = ['Single Pedestrian', 'Deterministic Crowd', 'Random Crowd', 'n Random Crowds']
+        crowdTypeChoices = ['Single Pedestrian', 'Deterministic Crowd', 'Random Crowd', 'Exact Crowd', 'n Random Crowds']
         crowdTypeQuestion = [inquirer.List('type', message=crowdTypeMessage, choices=crowdTypeChoices)]
         crowdTypeAnswer = inquirer.prompt(crowdTypeQuestion)
 
@@ -392,6 +414,8 @@ class SimulationSetup:
                 for i in crowdPropertiesAnswers:
                     self.crowdOptions[i] = crowdPropertiesAnswers[i]
 
+        self.fixCrowdOptionsDataTypes()
+
     def enterHumanProperties(self):
         # TODO: Check wording and units
         # Ask the user whether they want to import default human properties
@@ -438,6 +462,8 @@ class SimulationSetup:
 
             for i in humanPropertiesAnswers:
                 self.humanProperties[i] = humanPropertiesAnswers[i]
+
+        self.fixHumanPropertiesDataTypes()
 
     def enterPedestrianModels(self):
         pedestrianModelMessage = 'Which model type(s) would you like to use?'
@@ -559,3 +585,4 @@ class SimulationSetup:
 
 if __name__ == '__main__':
     main()
+    # testRun()

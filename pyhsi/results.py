@@ -7,11 +7,17 @@ import numpy as np
 import sys
 from matplotlib import pyplot as plt
 
+from tkinter import *
+from tkinter import filedialog
+
 
 def loadResults():
-    results = Results.loadFromFile('../simulations/results/simple_fe_mm.xlsx')
-    results.plotMidspanAcceleration("Midspan Acceleration")
-    results.printMaxMidspanRMS()
+
+    results = Results.open()
+    # results = Results.open('../simulations/results/simple_fe_mm.xlsx')
+    # results = Results.open('../simulations/results/crowd1_fe_mm.xlsx')
+
+    results.options()
 
 
 class Results:
@@ -62,6 +68,16 @@ class Results:
     # endregion
 
     # region Open and Save results
+    def askSave(self):
+        # Check if user wants to save the results
+        saveMessage = "Do you want to save the results?"
+        saveChoices = ['Yes', 'No']
+        saveQuestion = [inquirer.List('save', message=saveMessage, choices=saveChoices)]
+        answer = inquirer.prompt(saveQuestion)
+
+        if answer['save'] == 'Yes':
+            self.save()
+
     def save(self):
         # Get name to save workbook
         filenameMessage = "Enter a filename to save the results under"
@@ -93,15 +109,25 @@ class Results:
 
         print("Saved results as: ", path)
 
-    @ classmethod
-    def loadFromFile(cls, filename=None):
+    @classmethod
+    def open(cls, filename=None):
+        """
+
+        """
+        # Select file from file explorer
         if not filename:
-            filenameMessage = "Enter the filename of the results you want to load"
-            filenameQuestion = [inquirer.Text('filename', message=filenameMessage)]
-            filenameAnswer = inquirer.prompt(filenameQuestion)
-            filename = f"../simulations/results/{filenameAnswer['filename']}"
-            if not filename[-5:] == '.xlsx':
-                filename += '.xlsx'
+            root = Tk()
+            root.withdraw()
+            root.call('wm', 'attributes', '.', '-topmost', True)
+            filename = filedialog.askopenfilename(
+                parent=root,
+                title='Select results file',
+                filetypes=[("Excel Files", ".xlsx")],
+                initialdir="../simulations/results")
+
+            if filename == '':
+                print('No file chosen, stopping program.')
+                sys.exit()
 
         t = pd.read_excel(filename, sheet_name='time', header=None).to_numpy().transpose()[0]
         displacement = pd.read_excel(filename, sheet_name='displacement', header=None).to_numpy()
@@ -117,26 +143,26 @@ class Results:
         # Options for processing the results
         choices = ['Finish viewing results',
                    'Save results',
-                   'Get maxRMS at midspan',
-                   'Graph rms',
+                   'Print maxRMS at midspan',
+                   'Plot maxRMS at midspan',
                    'Cancel']
         question = [inquirer.List('next', message="How would you like to proceed?", choices=choices)]
         answer = inquirer.prompt(question)
 
         while answer['next'] != 'Finish viewing results':
-            if answer['next'] == 'Get maxRMS at midspan':
+            if answer['next'] == 'Save results':
                 self.save()
-            elif answer['next'] == 'Get maxRMS at midspan':
-                print(self.maxMidspanRMS)
-            elif answer['next'] == 'Graph rms':
-                print(self)
-                print(repr(self))
+            elif answer['next'] == 'Print maxRMS at midspan':
+                self.printMaxMidspanRMS()
+            elif answer['next'] == 'Plot maxRMS at midspan':
+                self.plotMidspanAcceleration()
             elif answer['next'] == 'Cancel':
                 sys.exit()
             answer = inquirer.prompt(question)
 
+    # region Process Results
     def printMaxMidspanRMS(self):
-        print(f"Max RMS: {self.maxMidspanRMS:.6f} m/s^2")
+        print(f"Max RMS: {self.maxMidspanRMS:.6f} m/s^2\n")
 
     def plotMidspanAcceleration(self, title='Acceleration'):
         plt.figure(figsize=(9, 4))
@@ -180,6 +206,7 @@ class Results:
             i += 1
 
         return rms
+    # endregion
 
 
 if __name__ == '__main__':
