@@ -292,6 +292,26 @@ class Solver:
 
         return M, C, K, F
 
+    def applyConstraints(self):
+        def imposeRestraint(A, dof):
+            A[dof] = 0          # column
+            A[:, dof] = 0       # row
+            A[dof, dof] = 1     # diagonal
+
+            return A
+
+        M = self.Mb
+        C = self.Cb
+        K = self.Kb
+
+        for i in self.RDOF:
+            dof = i
+            M = imposeRestraint(M, dof)
+            C = imposeRestraint(C, dof)
+            K = imposeRestraint(K, dof)
+
+        return M, C, K
+
     # def globalShapeFunction(self, x, Ng, dNg, ddNg):
     def globalShapeFunction(self, x):
         """
