@@ -9,8 +9,8 @@ def testRandomCrowd():
     # Checks the distribution of parameters for random crowds
     n = 100     # number of crowds to test over
 
-    humanProperties = hsi.getHumanProperties()
-    hsi.updateHumanProperties(humanProperties)
+    populationProperties = hsi.getPopulationProperties()
+    hsi.updatePopulationProperties(populationProperties)
 
     # Crowd parameters
     numPedestrians = 100
@@ -31,8 +31,8 @@ def testDeterministicCrowd():
     # Checks the distribution of parameters for random crowds
     n = 100     # number of crowds to test over
 
-    humanProperties = hsi.getHumanProperties()
-    hsi.updateHumanProperties(humanProperties)
+    populationProperties = hsi.getPopulationProperties()
+    hsi.updatePopulationProperties(populationProperties)
 
     # Crowd parameters
     numPedestrians = 100

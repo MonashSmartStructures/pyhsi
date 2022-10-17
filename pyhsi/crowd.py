@@ -12,7 +12,7 @@ class Pedestrian:
     Base Class for creating a Pedestrian
     """
 
-    humanProperties = {}
+    populationProperties = {}
     meanLognormalModel = 4.28  # mM
     sdLognormalModel = 0.21  # sM
 
@@ -52,7 +52,7 @@ class Pedestrian:
         self.iSync = iSync
 
     @classmethod
-    def setHumanProperties(cls, humanProperties):
+    def setPopulationProperties(cls, populationProperties):
         """
         class method function is used for future user to be able to access and modify the class state
 
@@ -63,7 +63,7 @@ class Pedestrian:
         Returns
         ------
         """
-        cls.humanProperties = humanProperties
+        cls.populationProperties = populationProperties
 
     @classmethod
     def setPaceAndPhase(cls, pace, phase):
@@ -104,7 +104,7 @@ class Pedestrian:
         iSync
 
         """
-        hp = cls.humanProperties
+        hp = cls.populationProperties
         pMass = hp['meanMass']
         pDamp = hp['meanDamping']*2*math.sqrt(cls.detK*hp['meanMass'])
         pStiff = cls.detK
@@ -135,7 +135,7 @@ class Pedestrian:
         Returns
         ------
         """
-        hp = cls.humanProperties
+        hp = cls.populationProperties
         pMass = np.random.lognormal(mean=cls.meanLognormalModel, sigma=cls.sdLognormalModel)
         pDamp = np.random.normal(loc=hp['meanDamping'], scale=hp['sdDamping'])
         pStiff = np.random.normal(loc=hp['meanStiffness'], scale=hp['sdStiffness'])
@@ -152,6 +152,23 @@ class Pedestrian:
 
         pStride = np.random.normal(hp['meanStride'], hp['sdStride'])
         pVelocity = np.multiply(pPace, pStride)
+
+        return cls(pMass, pDamp, pStiff, pPace, pPhase, pLocation, pVelocity, iSync)
+
+    @classmethod
+    def exactPedestrian(cls, location, synched=0):
+        """
+        Temporary, used for testing crowds
+        """
+        hp = cls.populationProperties
+        pMass = hp['meanMass']
+        pDamp = hp['meanDamping'] * 2 * math.sqrt(cls.detK * hp['meanMass'])
+        pStiff = cls.detK
+        pPace = 2
+        pPhase = 0
+        pLocation = location
+        pVelocity = cls.detVelocity
+        iSync = synched
 
         return cls(pMass, pDamp, pStiff, pPace, pPhase, pLocation, pVelocity, iSync)
 
@@ -198,9 +215,9 @@ class Pedestrian:
 
 class Crowd:
 
-    humanProperties = {}
+    populationProperties = {}
     """
-    an empty dictionary is initialized to store human properties which will be introduced in the following 
+    an empty dictionary is initialized to store population properties which will be introduced in the following 
     lines of code.  
     """
 
@@ -228,7 +245,7 @@ class Crowd:
     def determineCrowdSynchronisation(self):
         sync = self.sync/100
         self.iSync = np.random.choice([0, 1], size=self.numPedestrians, p=[1 - sync, sync])
-        pace = np.random.normal(loc=self.humanProperties['meanPace'], scale=self.humanProperties['sdPace'])
+        pace = np.random.normal(loc=self.populationProperties['meanPace'], scale=self.populationProperties['sdPace'])
         phase = (2 * math.pi) * (np.random.rand())
         Pedestrian.setPaceAndPhase(pace, phase)
 
@@ -238,13 +255,19 @@ class Crowd:
     def addDeterministicPedestrian(self, location, synched):
         self.pedestrians.append(Pedestrian.deterministicPedestrian(location, synched))
 
-    @classmethod
-    def setHumanProperties(cls, humanProperties):
+    def addExactPedestrian(self, location, synched):
         """
-        classmethod function is used so users can set their own human properties
+        Temporary, for testing
+        """
+        self.pedestrians.append(Pedestrian.exactPedestrian(location, synched))
+
+    @classmethod
+    def setPopulationProperties(cls, populationProperties):
+        """
+        classmethod function is used so users can set their own population properties
         and store it in the dictionary
         """
-        cls.humanProperties = humanProperties
+        cls.populationProperties = populationProperties
 
     @classmethod
     def fromDict(cls, crowdOptions):
@@ -272,8 +295,8 @@ class SinglePedestrian(Pedestrian):
         # TODO: Where should k come from
         k = 14.11e3
 
-        pMass = self.humanProperties['meanMass']
-        pDamp = self.humanProperties['meanDamping'] * 2 * math.sqrt(k * pMass)
+        pMass = self.populationProperties['meanMass']
+        pDamp = self.populationProperties['meanDamping'] * 2 * math.sqrt(k * pMass)
         pStiff = k
         pPace = 2
         pPhase = 0
@@ -325,26 +348,39 @@ class RandomCrowd(Crowd):
             self.addRandomPedestrian(self.locations[i], self.iSync[i])
 
 
-def getHumanProperties():
-    humanProperties = {}
+def getPopulationProperties():
+    populationProperties = {}
 
-    with open('../simulations/defaults/DefaultHumanProperties.csv', newline='') as csvFile:
+    with open('../simulations/defaults/DefaultPopulationProperties.csv', newline='') as csvFile:
         csvReader = csv.reader(csvFile, delimiter=',')
         for row in csvReader:
-            humanProperties[row[0]] = float(row[1])
+            populationProperties[row[0]] = float(row[1])
 
-    return humanProperties
-
-
-def updateHumanProperties(humanProperties):
-    Pedestrian.setHumanProperties(humanProperties)
-    Crowd.setHumanProperties(humanProperties)
+    return populationProperties
 
 
-# testcrowd = Crowd(0.5,100,2,0.1)
-# testcrowd.generateBodyProperties()
+def updatePopulationProperties(populationProperties):
+    Pedestrian.setPopulationProperties(populationProperties)
+    Crowd.setPopulationProperties(populationProperties)
 
-# testcrowd = testCrowd(80,650,21500,2.10,math.pi,0,1.51,0)
 
+class ExactCrowd(Crowd):
 
+    arrivalGap = 1      # HSI Paper Section 5.4
+
+    def __init__(self, numPedestrians, length, width, sync):
+        super().__init__(numPedestrians, length, width, sync)
+        self.generateLocations()
+        self.populateCrowd()
+
+    def generateLocations(self):
+        self.locations = -self.arrivalGap*np.array(range(self.numPedestrians))
+
+    def populateCrowd(self):
+        for i in range(self.numPedestrians):
+            self.addExactPedestrian(self.locations[i], self.iSync[i])
+
+    @classmethod
+    def setArrivalGap(cls, arrivalGap):
+        cls.arrivalGap = arrivalGap
 

@@ -6,7 +6,6 @@ import math
 import numpy
 import numpy as np
 
-from matplotlib import pyplot as plt
 
 import scipy
 from scipy.linalg import eig
@@ -23,12 +22,12 @@ class Solver:
     """
     The base class for Human-Structure Interaction
     """
-    nSteps = 5000
+    numSteps = 5000
     g = 9.81
     PedestrianModel = None
     ModelType = None
 
-    def __init__(self, crowd, beam, filename=None):
+    def __init__(self, crowd, beam):
         """
         Conducts the HSI analysis given the crowd and beam information
 
@@ -51,16 +50,16 @@ class Solver:
         self.nDOF = self.calcnDOF()                             # Overall DOFs
         self.RDOF = self.beam.RDOF                              # Restrained DOFs
 
-        self.lamda = np.zeros((self.nSteps, 2 * self.nDOF))     # ???
+        self.lamda = np.zeros((self.numSteps, 2 * self.nDOF))     # ???
         self.eigflag = 0                                        # ???
 
         self.t, self.dT = self.genTimeVector()                  # Setup time vector
         self.Mb, self.Cb, self.Kb = self.assembleMCK()          # Assemble mass, stiffness and damping matrices
         self.Mb, self.Cb, self.Kb = self.constraints(self.Mb, self.Cb, self.Kb)
 
-        self.q = np.zeros((self.nSteps, self.nDOF))             # Initialize displacement matrix
-        self.dq = np.zeros((self.nSteps, self.nDOF))            # Initialize velocity matrix
-        self.ddq = np.zeros((self.nSteps, self.nDOF))           # Initialize acceleration matrix
+        self.q = np.zeros((self.numSteps, self.nDOF))             # Initialize displacement matrix
+        self.dq = np.zeros((self.numSteps, self.nDOF))            # Initialize velocity matrix
+        self.ddq = np.zeros((self.numSteps, self.nDOF))           # Initialize acceleration matrix
         self.F0 = np.zeros(self.nDOF)                           # Initialize ??? matrix
 
     # region Prepare Solver
@@ -99,11 +98,11 @@ class Solver:
                 maxTimeOff = timeOff
 
         timeEnd = 1.1*maxTimeOff    # Run simulation for a bit after the last ped has left
-        dT = timeEnd / self.nSteps
+        dT = timeEnd / self.numSteps
         dT = min(dT, dTMax)
         t = np.arange(0, timeEnd, dT)  # Rounding error created by differing precision in Python vs MATLAB
 
-        self.nSteps = len(t)    # Adjust nSteps
+        self.numSteps = len(t)    # Adjust numSteps
 
         return t, dT
 
@@ -230,7 +229,7 @@ class Solver:
     # region Solve
     def solve(self):
         print(f"Solving system with a '{self.ModelType} - {self.PedestrianModel}' model")
-        for i in range(1, self.nSteps):
+        for i in range(1, self.numSteps):
             u, du, ddu, Ft = self.nonLinearNewmarkBeta(self.t[i], self.q[i-1], self.dq[i-1], self.ddq[i-1])
             self.F0 = Ft
             self.q[i] = u
@@ -239,7 +238,7 @@ class Solver:
 
             # Progress
             if i % 100 == 0:
-                percentCompleted = i/self.nSteps * 100
+                percentCompleted = i/self.numSteps * 100
                 print(f"{percentCompleted:.2f}% completed", end='\r')
 
         # return self.q, self.dq, self.ddq
@@ -326,24 +325,16 @@ class Solver:
     def getCurrentSystemMatrices(self, t):
         # This function returns the M, C, K and F matrices at time t
 
-        # Apply constraints to beam
-        # M, C, K = self.applyConstraints()
-
         # Initialize global matrices
         M = self.Mb.copy()
         C = self.Cb.copy()
         K = self.Kb.copy()
         F = np.zeros(self.nDOF)
 
-        # Shape function zero matrices
-        Ng0 = np.zeros(self.nBDOF)
-        dNg0 = np.zeros(self.nBDOF)
-        ddNg0 = np.zeros(self.nBDOF)
-
         # For each pedestrian
         for ped in self.crowd.pedestrians:
             x, Ft = ped.calcPedForce(t)     # Pedestrian position and force
-            N, dN, ddN = self.globalShapeFunction(x, Ng0, dNg0, ddNg0)
+            N, dN, ddN = self.globalShapeFunction(x)
             Nt = np.array([N]).T            # Transpose of N
 
             # Calculate adjustments to MCKF
@@ -362,9 +353,9 @@ class Solver:
 
     def applyConstraints(self):
         def imposeRestraint(A, dof):
-            A[dof] = 0  # column
-            A[:, dof] = 0  # row
-            A[dof, dof] = 1  # diagonal
+            A[dof] = 0          # column
+            A[:, dof] = 0       # row
+            A[dof, dof] = 1     # diagonal
 
             return A
 
@@ -380,7 +371,8 @@ class Solver:
 
         return M, C, K
 
-    def globalShapeFunction(self, x, Ng, dNg, ddNg):
+    # def globalShapeFunction(self, x, Ng, dNg, ddNg):
+    def globalShapeFunction(self, x):
         """
         This function assembles the DOF force matric based on a time vector and a force vector
 
@@ -402,6 +394,11 @@ class Solver:
         dNg
         ddNg
         """
+
+        # Shape function zero matrices
+        Ng = np.zeros(self.nBDOF)
+        dNg = np.zeros(self.nBDOF)
+        ddNg = np.zeros(self.nBDOF)
 
         # Check if the force is on the bridge
         if self.beam.onBeam(x):
@@ -441,7 +438,11 @@ class Solver:
 
     def getModelType(self):
         return self.PedestrianModel, self.ModelType
-    # region
+    # endregion
+
+    @classmethod
+    def setNumSteps(cls, numSteps):
+        cls.numSteps = numSteps
 
 
 class FeMmSolver(Solver):
@@ -553,6 +554,7 @@ def transpose(A):
 def reshape(A):
     return A.reshape(len(A))
 
+
 def timeRMS(t, x, RMS_Window=1):
     # This function returns the tspan-rms of the signal
 
@@ -577,3 +579,7 @@ def timeRMS(t, x, RMS_Window=1):
         i += 1
 
     return rms
+
+
+if __name__ == '__main__':
+    print("Go to run.py to run a simulation, or results to process results.")
