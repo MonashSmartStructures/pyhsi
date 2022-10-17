@@ -1,5 +1,5 @@
 """
-PyHSI - Crowd Class definition
+PyHSI - Human Structure Interaction -  Crowd Class definition
 """
 
 import numpy as np

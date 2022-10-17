@@ -1,3 +1,6 @@
+"""
+PyHSI - Human Structure Interaction - Solver Module
+"""
 import math
 
 import numpy
@@ -16,10 +19,9 @@ from results import *
 import the beams from the beam
 '''
 
-
 class Solver:
     """
-    This section of the code creates a solver class
+    The base class for Human-Structure Interaction
     """
     nSteps = 5000
     g = 9.81
@@ -28,16 +30,17 @@ class Solver:
 
     def __init__(self, crowd, beam, filename=None):
         """
-        Initializes the Solver class
+        Conducts the HSI analysis given the crowd and beam information
 
         Parameters
         ----------
-        crowd
-        beam
+        crowd : class ???
+            the modelled walking pedestrian
+        beam : class
+            modelled arbitrary beam structure
 
-
-        Return
-        ------
+        Returns
+        -------
         None.
 
         """
@@ -62,13 +65,28 @@ class Solver:
 
     # region Prepare Solver
     def calcnDOF(self):
+        """
+        Calculate number of DOF
+
+        Returns
+        -------
+        nBDOF: int ???
+            number of Beam-only DOFs
+        """
         if self.PedestrianModel == "Spring Mass Damper":
             return self.nBDOF + self.crowd.numPedestrians
         return self.nBDOF
 
-    def genTimeVector(self):
+    def genTimeVector(self) -> (np.ndarray, float):
         """
-        This function generates the time vector by simulating the time frame for a given space and stride vector
+        Returns the time vector by simulating the time frame for a given space and stride vector
+
+        Returns
+        -------
+        t : array
+            current time
+        dt : float
+            time step size
         """
         f = 1/(2*math.pi) * (math.pi/self.beam.length)**2*math.sqrt(self.beam.EI/self.beam.linearMass)
         period = 1/f
@@ -93,6 +111,12 @@ class Solver:
         """
         This function assembles the mass and stiffness matrices, applies the boundary conditions, and calculates a
         damping matrix based on Rayleigh damping
+
+        Return
+        ------
+        M
+        C
+        K
         """
 
         # M - System mass
@@ -133,6 +157,25 @@ class Solver:
         return M, C, K
 
     def constraints(self, M, C, K):
+        """
+        apply constraints before estimating modal properties
+
+        Parameters
+        ----------
+        M
+            System Mass
+        C
+            System Damping
+        K
+            System stiffness
+
+        Return
+        ------
+        M
+        C
+        K
+
+        """
         def imposeRestraint(A, dof):
             A[dof] = 0  # column
             A[:, dof] = 0  # row
@@ -150,6 +193,22 @@ class Solver:
 
     @staticmethod
     def modal(M, K):
+        """
+        Parameters
+        ----------
+        M
+            System Mass
+        K
+            System Stiffness
+
+        Return
+        ------
+        phi
+            mode shape matrix
+        omega
+            ???? eigen values?
+
+        """
         lam, phi = eigh(K, M)
         n, m = K.shape
         omega = np.sqrt(lam)
@@ -324,6 +383,24 @@ class Solver:
     def globalShapeFunction(self, x, Ng, dNg, ddNg):
         """
         This function assembles the DOF force matric based on a time vector and a force vector
+
+        Parameter
+        ---------
+        x
+            the load position
+        Ng
+            Shape function vector [nDOF, 1]
+        dNg
+            1st derivate Shape function vector  [nDOF,1]
+        ddNg
+            2nd derivate Shape function vector  [nDOF,1]
+
+
+        Return
+        ------
+        Ng
+        dNg
+        ddNg
         """
 
         # Check if the force is on the bridge
