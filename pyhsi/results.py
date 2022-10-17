@@ -1,3 +1,6 @@
+"""
+PyHSI - Human Structure Interaction -  Results Module
+"""
 import xlsxwriter
 import inquirer
 import openpyxl

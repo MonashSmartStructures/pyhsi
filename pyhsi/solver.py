@@ -20,7 +20,9 @@ import the beams from the beam
 
 class Solver:
     """
-    The base class for Human-Structure Interaction
+    The base class for Human-Structure Interaction.
+
+    Solves the system model combinations
     """
     numSteps = 5000
     g = 9.81
@@ -34,9 +36,9 @@ class Solver:
         Parameters
         ----------
         crowd : class ???
-            the modelled walking pedestrian
+            The modelled walking pedestrian
         beam : class
-            modelled arbitrary beam structure
+            Modelled arbitrary beam structure
 
         Returns
         -------
@@ -70,7 +72,7 @@ class Solver:
         Returns
         -------
         nBDOF: int ???
-            number of Beam-only DOFs
+            Number of Beam-only DOFs
         """
         if self.PedestrianModel == "Spring Mass Damper":
             return self.nBDOF + self.crowd.numPedestrians
@@ -83,9 +85,9 @@ class Solver:
         Returns
         -------
         t : array
-            current time
+            Current time
         dt : float
-            time step size
+            Time step size
         """
         f = 1/(2*math.pi) * (math.pi/self.beam.length)**2*math.sqrt(self.beam.EI/self.beam.linearMass)
         period = 1/f
@@ -113,9 +115,12 @@ class Solver:
 
         Return
         ------
-        M
-        C
-        K
+        M : np.ndarray
+            System mass
+        C : np.ndarray
+            System damping
+        K : np.ndarray
+            System stiffness
         """
 
         # M - System mass
@@ -161,24 +166,38 @@ class Solver:
 
         Parameters
         ----------
-        M
+        M : np.ndarray
             System Mass
-        C
+        C : np.ndarray
             System Damping
-        K
+        K : np.ndarray
             System stiffness
 
         Return
         ------
-        M
-        C
-        K
-
+        M : np.ndarray
+        C : np.ndarray
+        K : np.ndarray
         """
         def imposeRestraint(A, dof):
             A[dof] = 0  # column
             A[:, dof] = 0  # row
             A[dof, dof] = 1  # diagonal
+            """
+            impose the restraints 
+            
+            Parameters
+            ----------
+            A : ???
+                Area
+            dof : Any 
+                Restrained degrees of freedom 
+            
+            Returns
+            -------
+            A :  ???
+                area 
+            """
 
             return A
 
@@ -195,16 +214,16 @@ class Solver:
         """
         Parameters
         ----------
-        M
+        M : np.ndarray
             System Mass
-        K
+        K : np.ndarray
             System Stiffness
 
         Return
         ------
-        phi
-            mode shape matrix
-        omega
+        phi : Any ???
+            Mode shape matrix
+        omega : ???
             ???? eigen values?
 
         """
@@ -216,6 +235,25 @@ class Solver:
 
     @staticmethod
     def rayleighCoeffs(w, modalDampingRatio, nHigh):
+        """
+        Returns the rayleigh coefficients, alpha and beta given the modal damping ratio of the first and nth mode
+
+        Parameters
+        ----------
+        w : Any ???
+            Vector of modal frequencies
+        modalDampingRatio : Any
+            Modal damping ratio of beam
+        nHigh : Any
+            Higher mdoe of damping matrix
+
+        Returns
+        -------
+        alpha : float
+            Rayleigh coefficient ???
+        beta  : float
+            Rayleigh coefficient ???
+        """
         wr = [i for i in w if i > 1.01]
         wi = wr[0]
         wj = wr[nHigh - 1]
@@ -228,6 +266,10 @@ class Solver:
 
     # region Solve
     def solve(self):
+        """
+        Not sure what this do ???
+
+        """
         print(f"Solving system with a '{self.ModelType} - {self.PedestrianModel}' model")
         for i in range(1, self.numSteps):
             u, du, ddu, Ft = self.nonLinearNewmarkBeta(self.t[i], self.q[i-1], self.dq[i-1], self.ddq[i-1])
@@ -245,9 +287,32 @@ class Solver:
 
     def nonLinearNewmarkBeta(self, t, u0, du0, ddu0):
         """
-        This function obtains the matrices M,C,K and F at time t from the function func. It integrates the euquations
+        This function obtains the matrices M,C,K and F at time t from the function func. It integrates the equations
         over time step dt and returns accelerations, velocities and displacements. it passes the current values of these
         parameters to func.
+
+        Parameters
+        ----------
+        t : Any
+            Current time
+        u0 : Any
+            Current displacement
+        du0 : Any
+            Current velocity
+        ddu0 : Any
+            Current acceleration
+
+        Returns
+        -------
+        u : int
+            Displacement
+        du : int
+            Velocity
+        ddu : int
+            Acceleration
+        F : np.ndarray
+            Force ???
+
         """
         # TODO: Complete
         # u = displacement
@@ -324,6 +389,25 @@ class Solver:
 
     def getCurrentSystemMatrices(self, t):
         # This function returns the M, C, K and F matrices at time t
+        """
+        Returns the M, C, K and F at time t
+
+        Parameters
+        ----------
+        t: Any
+            Time
+
+        Returns
+        -------
+        M : Any ???
+            System Mass
+        C : Any ???
+            System Damping
+        K : Any ???
+            System stiffness
+        F : np.ndarray
+            Force ???
+        """
 
         # Initialize global matrices
         M = self.Mb.copy()
@@ -352,7 +436,34 @@ class Solver:
         return M, C, K, F
 
     def applyConstraints(self):
+        """
+        apply constraints before estimating modal properties
+
+        Return
+        ------
+        M : Any ???
+            System mass
+        C : Any ???
+            System mass
+        K : Any ???
+            System mass
+        """
         def imposeRestraint(A, dof):
+            """
+            impose the restraints
+
+            Parameters
+            ----------
+            A : ???
+                Area
+            dof : Any
+                Restrained degrees of freedom
+
+            Returns
+            -------
+            A :  ???
+                area
+            """
             A[dof] = 0          # column
             A[:, dof] = 0       # row
             A[dof, dof] = 1     # diagonal
@@ -378,21 +489,18 @@ class Solver:
 
         Parameter
         ---------
-        x
+        x : Any ???
             the load position
-        Ng
-            Shape function vector [nDOF, 1]
-        dNg
-            1st derivate Shape function vector  [nDOF,1]
-        ddNg
-            2nd derivate Shape function vector  [nDOF,1]
 
 
         Return
         ------
-        Ng
-        dNg
-        ddNg
+        Ng : np.ndarray
+            Shape function vector [nDOF,1]
+        dNg : np.ndarray
+            1st derivate shape function vector  [nDOF,1]
+        ddNg : np.ndarray
+            2nd derivate Shape function vector  [nDOF,1]
         """
 
         # Shape function zero matrices

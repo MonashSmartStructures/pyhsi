@@ -1,8 +1,14 @@
+"""
+PyHSI - Beam Class definition
+"""
 import math
 import numpy as np
 
 
 class Beam:
+    """
+    Class definition
+    """
     # Class attributes
     _numElements = 10  # n - Number of beam elements !not for modal
     length = 50  # L - Length (m)
@@ -17,6 +23,34 @@ class Beam:
     beamFreq = 2  # f - Beam frequency, given linear mass (Hz)
 
     def __init__(self, numElements, length, width, height, E, modalDampingRatio, nHigh, area, linearMass):
+        """
+        Constructs a beam object
+
+        Parameters
+        ----------
+        numElements: int
+            The number of beam element
+        length: int
+            Length of beam
+        width: int
+            Width of beam
+        height: int
+            Height of beam
+        E: Any
+            Young's modulus
+        modalDampingRatio: Any
+            Modal damping ratio of the beam
+        nHigh: Any
+            Higher mode for damping matrix
+        area: Any
+            Cross-section area
+        linearMass: Any
+            Linear Mass
+
+        Returns
+        -------
+        None.
+        """
 
         self._numElements = numElements
         self.length = length
