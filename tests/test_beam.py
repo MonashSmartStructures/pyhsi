@@ -1,15 +1,11 @@
 
-#import pyhsi.beam
-
-import sys
-
-print(sys)
+from pyhsi import *
 
 
 
-#bridge = Beam(numElements, length, width, height, E, modalDampingRatio, nHigh, area, linearMass)
+bridge = Beam(numElements, length, width, height, E, modalDampingRatio, nHigh, area, linearMass)
 
-#bridge.numElements
-#bridge.length
+bridge.numElements
+bridge.length
 
 

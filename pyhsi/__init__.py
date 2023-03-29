@@ -6,7 +6,7 @@ __version__ = '0.1.0'
 
 from .crowd import *
 from .beam import *
-from .fe_mf import *
+from .run import *
 
 
 
