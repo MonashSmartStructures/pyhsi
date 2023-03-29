@@ -74,17 +74,41 @@ class Beam:
     def elemLength(self):
         if self._elemLength is None:
             self._elemLength = self.length / self.numElements
+
+        """
+        Returns the element length
+        
+        Returns
+        -------
+        elemLength : float 
+            The element length
+        """
         return self._elemLength
 
     @property
     def I(self):
         # I - Second Moment of Area (m^4)
+        """
+             Return second moment area
+
+            Returns
+            -------
+            I : float
+             The second moment area of element
+        """
         if self._I is None:
             self._I = (self.width * self.height ** 3) / 12
         return self._I
 
     @property
     def EI(self):
+        """
+        Returns
+        -------
+        EI : float
+         The flexural rigidity
+
+        """
         # EI - Flexural Rigidity
         if self._EI is None:
             self._EI = self.linearMass * ((2 * math.pi * self.beamFreq) * (math.pi / self.length) ** (-2)) ** 2
@@ -92,28 +116,75 @@ class Beam:
 
     @property
     def nDOF(self):
+        """
+        The number of overall DOFs
+
+        Returns
+        -------
+        nDOF : int
+         Number of overall DOFs
+
+        """
         if self._nDOF is None:
             self._nDOF = 2 * (self.numElements + 1)
         return self._nDOF
 
     @property
     def nBDOF(self):
+        """
+        Returns the number of beam-only DOFs
+
+        Returns
+        -------
+        nBDOF : int
+         Beam only DOFs
+
+        """
         if self._nBDOF is None:
             self._nBDOF = 2 * (self.numElements + 1)
         return self._nBDOF
 
     @property
     def RDOF(self):
+        """
+        Returns the restrained DOFs
+
+        Returns
+        -------
+        RDOF : float
+         Restrained degree of freedom
+        """
         if self._RDOF is None:
             self._RDOF = [0, self.nDOF - 2]  # Should this be nDOF-1 so that the last column is used not 2nd last?
         return self._RDOF
 
     @property
     def numElements(self):
+        """
+        Returns number of elements
+
+        Return
+        ------
+        _numElements : int
+          Number of elements of beam
+        """
+
         return self._numElements
 
     @numElements.setter
     def numElements(self, numElements):
+        """
+        Sets even number of elements
+        Parameters
+        ----------
+        numElements : int
+            Number of elements of beam
+
+        Returns
+        -------
+        None
+
+        """
         if numElements % 2 != 0:
             numElements += 1
         self._numElements = numElements
@@ -121,6 +192,17 @@ class Beam:
     # endregion
 
     def beamElement(self):
+        """
+        Returns the elemental mass matrix and elemental stiffness matrix
+
+        Returns
+        -------
+        elementalMassMatrix : np.ndarray
+            Elemental mass matrix
+        elementalStiffnessMatrix : np.ndarray
+            Elemental stiffness matrix
+
+        """
         L = self.elemLength
 
         # Elemental mass matrix
@@ -138,6 +220,7 @@ class Beam:
         return elementalMassMatrix, elementalStiffnessMatrix
 
     def onBeam(self, x):
+
         # Checks if a location is on the beam
         if 0 <= x <= self.length:
             return True
